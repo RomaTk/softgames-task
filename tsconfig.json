@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"strict": true,
+		"moduleResolution": "node",
+		"module": "ESNext",
+		"esModuleInterop": true,
+		"typeRoots": ["node_modules/@types"],
+		"composite": true,
+		"noEmit": false,
+		"noEmitOnError": true
+	},
+	"references": [{ "path": "./tools/prettier/ts" }]
+}

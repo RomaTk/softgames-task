@@ -1,0 +1,18 @@
+{
+	"MD007": {
+		"indent": 4,
+		"start_indent": 4,
+		"start_indented": false
+	},
+	"MD010": {
+		"code_blocks": false,
+		"spaces_per_tab": 4
+	},
+	"MD013": false,
+	"MD030": {
+		"ol_multi": 2,
+		"ul_single": 3,
+		"ol_single": 2,
+		"ul_multi": 3
+	}
+}

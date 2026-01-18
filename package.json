@@ -1,0 +1,32 @@
+{
+	"name": "softgames-task",
+	"version": "1.0.0",
+	"description": "Game Developer Assignment",
+	"main": "#TODO",
+	"scripts": {
+		"prettier": "npm run build:prettier && prettier --write .",
+		"prettier:check": "npm run build:prettier && prettier --check .",
+		"markdownlint": "markdownlint-cli2 --fix *.md",
+		"markdownlint:check": "markdownlint-cli2 *.md",
+		"build:prettier": "rm -rf ./tools/prettier/js && tsc --build ./tools/prettier/ts",
+		"tsc:check": "npm run build:prettier"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/RomaTk/softgames-task.git"
+	},
+	"keywords": [
+		"#TODO"
+	],
+	"author": "RomaTk",
+	"license": "SEE LICENSE IN LICENSE.md",
+	"private": false,
+	"type": "module",
+	"devDependencies": {
+		"markdownlint": "latest",
+		"markdownlint-cli2": "latest",
+		"prettier": "latest",
+		"typescript": "latest"
+	},
+	"dependencies": {}
+}
