@@ -8,8 +8,12 @@
 		"prettier:check": "npm run build:prettier && prettier --check .",
 		"markdownlint": "markdownlint-cli2 --fix *.md",
 		"markdownlint:check": "markdownlint-cli2 *.md",
-		"build:prettier": "rm -rf ./tools/prettier/js && tsc --build ./tools/prettier/ts",
-		"tsc:check": "npm run build:prettier"
+		"tsc:build:prettier": "rm -rf ./tools/prettier/js && tsc --build ./tools/prettier/ts",
+		"tsc:build:eslint": "rm -rf ./tools/eslint/js && tsc --build ./tools/eslint/ts",
+		"tsc:build:tools": "npm run tsc:build:prettier && npm run tsc:build:eslint",
+		"tsc:build:all": "npm run tsc:build:tools",
+		"lint": "npm run tsc:build:eslint && eslint --fix -c ./eslint.config.js ./",
+		"lint:check": "npm run tsc:build:eslint && eslint -c ./eslint.config.js ./"
 	},
 	"repository": {
 		"type": "git",
@@ -23,10 +27,13 @@
 	"private": false,
 	"type": "module",
 	"devDependencies": {
+		"@types/node": "latest",
+		"@typescript-eslint/eslint-plugin": "latest",
+		"@typescript-eslint/parser": "latest",
+		"eslint": "latest",
 		"markdownlint": "latest",
 		"markdownlint-cli2": "latest",
 		"prettier": "latest",
 		"typescript": "latest"
-	},
-	"dependencies": {}
+	}
 }

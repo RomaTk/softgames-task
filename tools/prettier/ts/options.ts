@@ -1,6 +1,6 @@
-import * as prettier from 'prettier'
+import type * as prettier from 'prettier'
 
-export default <prettier.Options>{
+const options: prettier.Options = {
 	arrowParens: 'always',
 	bracketSameLine: false,
 	bracketSpacing: true,
@@ -22,3 +22,5 @@ export default <prettier.Options>{
 	// But for this project, vue is not used
 	vueIndentScriptAndStyle: true,
 }
+
+export default options
