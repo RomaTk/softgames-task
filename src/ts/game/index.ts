@@ -1,7 +1,7 @@
 import '@pixi/layout'
 import { Application } from 'pixi.js'
 import { Menu } from './menu/index.js'
-import { OnTickResizeObserver } from './resize.js'
+import { OnTickResizeObserver } from './resize-observer.js'
 
 export type TLoadStatus =
 	| {
