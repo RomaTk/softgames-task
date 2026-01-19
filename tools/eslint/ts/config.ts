@@ -39,6 +39,26 @@ const config: TEslintConfig[] = [
 		},
 	},
 	{
+		files: ['tools/fix-esm-import/ts/**/*.ts'],
+		...maxStrictTsConfig,
+		languageOptions: {
+			...maxStrictTsConfig.languageOptions,
+			globals: {
+				...(maxStrictTsReactConfig.languageOptions?.['globals'] ?? {}),
+				// Here is globals for node (not all for node - to control better what is added)
+				console: globals.node.console,
+			},
+			parserOptions: {
+				...(maxStrictTsConfig.languageOptions?.['parserOptions'] ?? {}),
+				project: ['./tools/fix-esm-import/ts/tsconfig.json'],
+			},
+		},
+		rules: {
+			...maxStrictTsConfig.rules,
+			[`no-console`]: 'off',
+		},
+	},
+	{
 		files: ['src/ts/**/*.ts'],
 		...maxStrictTsConfig,
 		languageOptions: {

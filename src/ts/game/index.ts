@@ -1,4 +1,6 @@
+import '@pixi/layout'
 import { Application } from 'pixi.js'
+import { Menu } from './menu/index.js'
 
 export type TLoadStatus =
 	| {
@@ -12,9 +14,11 @@ export type TLoadStatus =
 export class Game {
 	protected loadPromise?: Promise<TLoadStatus>
 	protected readonly application: Application
+	protected readonly menu: Menu
 
 	public constructor() {
 		this.application = new Application()
+		this.menu = new Menu()
 	}
 
 	public get canvas(): HTMLCanvasElement {
@@ -39,6 +43,18 @@ export class Game {
 			throw err
 		})
 		return this.loadPromise
+	}
+
+	public resize(): void {
+		this.menu.resize(
+			this.application.renderer.width,
+			this.application.renderer.height,
+		)
+	}
+
+	public display(): void {
+		this.menu.display()
+		this.application.stage.addChild(this.menu.viewObject)
 	}
 
 	public destroy(): void {

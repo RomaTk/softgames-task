@@ -9,6 +9,8 @@ export const ComponentGame = lazy(async () => {
 				.load()
 				.then((errorResult: Readonly<TLoadStatus>) => {
 					if (errorResult.loaded) {
+						module.default.game.resize()
+						module.default.game.display()
 						return module.default.ComponentGame
 					}
 					throw errorResult.error
