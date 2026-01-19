@@ -20,7 +20,8 @@ export const ComponentGame = lazy(async () => {
 					throw err
 				}),
 		}
-	} catch {
+	} catch (err) {
+		console.error(err)
 		const errorResult: { default: FC } = {
 			default: () => <div>{'Failed to load game.'}</div>,
 		}

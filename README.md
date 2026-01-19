@@ -43,3 +43,4 @@ Install extensions for your IDE, for vscode check `.vscode/extensions.json`.
 - I changed the `@pixi/layout` imports to use `.js`, so
   `"moduleResolution": "bundler"` is not required (I don`t like to set it). This
   may need to be revisited if the library is updated.
+- Important note, we can not use layouts before initialization of pixi app

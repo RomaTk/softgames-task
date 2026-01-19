@@ -1,11 +1,55 @@
+import { extname } from 'path'
 import { replaceInFileSync } from 'replace-in-file'
 
-// Configuration
 const options = {
 	dry: false,
 	files: 'node_modules/@pixi/layout/**/*.{js,mjs,d.ts}',
-	from: /(?<temp3>(?:from|import)(?:\s+|\s*\(\s*)['"])(?<temp2>\.[^'"]+?)(?<!\.js)(?<!\.json)(?<temp1>['"])/gu,
-	to: '$1$2.js$3',
+	// Regex capture groups:
+	// 1. Prefix: (import/from + quote)
+	// 2. Path:   (./something)
+	// 3. Suffix: (quote)
+	from: /(?<temp3>(?:from|import)(?:\s+|\s*\(\s*)['"])(?<temp2>\.[^'"]+)(?<temp1>['"])/gu,
+
+	to: (match: string): string => {
+		// We look for the path inside the quotes
+		const parts =
+			/(?<temp3>(?:from|import)(?:\s+|\s*\(\s*)['"])(?<temp2>\.[^'"]+)(?<temp1>['"])/u.exec(
+				match,
+			)
+
+		if (!parts) {
+			return match
+		}
+
+		return ((): string => {
+			const [, prefix, importPath, suffix] = parts
+
+			if (
+				typeof importPath !== 'string' ||
+				typeof prefix !== 'string' ||
+				typeof suffix !== 'string'
+			) {
+				throw new Error('Unexpected parsing error in replace callback.')
+			}
+
+			// Ignore directory imports or empty paths
+			if (
+				importPath === '.' ||
+				importPath === '..' ||
+				importPath.endsWith('/')
+			) {
+				return match
+			}
+
+			// Extension Check: If it has an extension (like .css, .png, .js), leave it alone
+			if (extname(importPath)) {
+				return match
+			}
+
+			// Add .js
+			return `${prefix}${importPath}.js${suffix}`
+		})()
+	},
 }
 
 try {

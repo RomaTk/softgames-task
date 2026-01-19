@@ -1,9 +1,9 @@
 import { Container } from 'pixi.js'
-import { MenuSelector } from './menu-selector.js'
+import { MenuSelector } from './menu-selector/index.js'
 
 export class Menu {
 	public readonly viewObject: Container
-	public readonly menuSelector: MenuSelector
+	protected readonly menuSelector: MenuSelector
 
 	public constructor() {
 		this.viewObject = new Container()
@@ -16,7 +16,10 @@ export class Menu {
 	}
 
 	public resize(width: number, height: number): void {
-		this.menuSelector.resize(width, height)
+		this.viewObject.layout = {
+			height,
+			width,
+		}
 	}
 
 	public destroy(): void {
