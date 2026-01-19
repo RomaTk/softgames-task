@@ -48,5 +48,12 @@ export const config: TEslintConfig = ((): TEslintConfig => {
 				},
 			],
 		},
+		settings: {
+			...(maxStrictTsConfig.settings ?? {}),
+			react: {
+				...(maxStrictTsConfig.settings?.['react'] ?? {}),
+				version: 'detect',
+			},
+		},
 	}
 })()

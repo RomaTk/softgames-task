@@ -3,9 +3,12 @@
 	"version": "1.0.0",
 	"description": "Game Developer Assignment",
 	"main": "#TODO",
+	"files": [
+		"dist/*"
+	],
 	"scripts": {
-		"prettier": "npm run build:prettier && prettier --write .",
-		"prettier:check": "npm run build:prettier && prettier --check .",
+		"prettier": "npm run tsc:build:prettier && prettier --write .",
+		"prettier:check": "npm run tsc:build:prettier && prettier --check .",
 		"markdownlint": "markdownlint-cli2 --fix *.md",
 		"markdownlint:check": "markdownlint-cli2 *.md",
 		"tsc:build:prettier": "rm -rf ./tools/prettier/js && tsc --build ./tools/prettier/ts",
@@ -15,7 +18,9 @@
 		"tsc:build:src": "tsc --build ./src/ts/tsconfig.json",
 		"tsc:build:all": "npm run tsc:build:tools && npm run tsc:build:src",
 		"lint": "npm run tsc:build:eslint && eslint --fix -c ./eslint.config.js ./",
-		"lint:check": "npm run tsc:build:eslint && eslint -c ./eslint.config.js ./"
+		"lint:check": "npm run tsc:build:eslint && eslint -c ./eslint.config.js ./",
+		"start": "npm run tsc:build:vite && vite --config ./vite.config.js serve",
+		"build": "npm run tsc:build:vite && vite --config ./vite.config.js build"
 	},
 	"repository": {
 		"type": "git",
