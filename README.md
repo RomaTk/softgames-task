@@ -36,7 +36,7 @@ Install extensions for your IDE, for vscode check `.vscode/extensions.json`.
 
 - For react eslint used
   [eslint-plugin-react](https://www.npmjs.com/package/eslint-plugin-react), not
-  [eslint-react](https://www.eslint-react.xyz/) becuase may be unstable and I do
+  [eslint-react](https://www.eslint-react.xyz/) because may be unstable and I do
   not rely on it yet, as main contributor is new.
 - No eslint for json, html, markdown as no needed for now. Not many code there.
   May sense to add later if project will grow.
