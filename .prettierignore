@@ -1,0 +1,9 @@
+/node_modules/
+/package-lock.json
+
+/tools/prettier/js/
+/tools/eslint/js/
+/tools/vite/js/
+/src/js
+
+/dist/

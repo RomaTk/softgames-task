@@ -1,0 +1,45 @@
+{
+	"extends": "../../../tsconfig.json",
+	"compilerOptions": {
+		"declaration": true,
+		// Necessary to make several projects build separately and then use them together
+		"outDir": "../js",
+		"skipLibCheck": true,
+
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"alwaysStrict": true,
+		"exactOptionalPropertyTypes": true,
+		"noFallthroughCasesInSwitch": true, // this is common mistake, but sometimes it's useful (so you can change it to false when it is necessary)
+		"noImplicitAny": true,
+		"noImplicitOverride": true,
+		"noImplicitReturns": true,
+		"noImplicitThis": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noUncheckedIndexedAccess": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"strict": true,
+		"strictBindCallApply": true,
+		"strictFunctionTypes": true,
+		"strictNullChecks": true,
+		"strictPropertyInitialization": true,
+		"useUnknownInCatchVariables": true,
+		// "allowArbitraryExtensions": false, //depends on your project - not added as eslint not working with it
+		// "allowImportingTsExtensions": false, //depends on your project - not added as eslint not working with it
+		"allowUmdGlobalAccess": false, //depends on your project
+		"resolveJsonModule": false,
+		// "resolvePackageJsonExports": false, - not added as eslint not working with it
+		// "resolvePackageJsonImports": false, - not added as eslint not working with it
+		"importHelpers": true, //for good read
+		"removeComments": false, //for good read
+		"sourceMap": true, // for good read
+		"stripInternal": false, // for good read and avoid risk
+		"allowJs": false, // for lib is good to use only typescript
+		"allowSyntheticDefaultImports": false, // to use only one way to import
+		"isolatedModules": true, // check with other libs, but generally is good to use
+		"emitDecoratorMetadata": false,
+		"experimentalDecorators": false
+	},
+	"include": ["./"]
+}

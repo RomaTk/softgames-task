@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"target": "esnext",
+		"strict": true,
+		"moduleResolution": "nodenext",
+		"module": "nodenext",
+		"esModuleInterop": true,
+		"typeRoots": ["node_modules/@types"],
+		"composite": true,
+		"noEmit": false,
+		"noEmitOnError": true
+	},
+	"references": [
+		{ "path": "./tools/prettier/ts" },
+		{ "path": "./tools/eslint/ts" },
+		{ "path": "./tools/vite/ts" },
+		{ "path": "./src/ts" }
+	]
+}
