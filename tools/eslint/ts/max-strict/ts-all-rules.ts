@@ -8,7 +8,7 @@ export const tsConfigAllRules: Partial<TEslintConfig['rules']> = ((): Partial<
 	if ('all' in configs) {
 		const all: unknown = tsPlugin.configs['all']
 		if (typeof all === 'object' && all !== null && 'rules' in all) {
-			//@ts-expect-error - We can not garantee types here, but we will get error in eslint is some problem
+			//@ts-expect-error - We can not guarantee types here, but we will get error in eslint is some problem
 			const rules: Partial<TEslintConfig['rules']> = all.rules
 			return rules
 		}
