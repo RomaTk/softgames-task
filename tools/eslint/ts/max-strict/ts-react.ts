@@ -2,10 +2,53 @@ import type { Config as TEslintConfig } from 'eslint/config'
 import { config as maxStrictTsConfig } from './ts.js'
 import reactPlugin from 'eslint-plugin-react'
 
+export type TRules = Exclude<TEslintConfig['rules'], undefined>
+
 export const config: TEslintConfig = ((): TEslintConfig => {
 	const disabled = 0,
 		enabled = 1,
-		keyForPlugin = 'react'
+		keyForPlugin = 'react',
+		maxConvetionRule = {
+			...((): TRules => {
+				const current =
+						maxStrictTsConfig.rules?.[
+							`@typescript-eslint/naming-convention`
+						],
+					excludeRule = {
+						filter: {
+							match: true,
+							regex: '^Component',
+						},
+						format: ['PascalCase'],
+						selector: ['variable', 'function'],
+					}
+				if (Array.isArray(current)) {
+					return {
+						[`@typescript-eslint/naming-convention`]: [
+							...current,
+							excludeRule,
+						],
+					}
+				} else if (typeof current === 'string') {
+					return {
+						[`@typescript-eslint/naming-convention`]: [
+							current,
+							excludeRule,
+							{
+								format: ['PascalCase'],
+								selector: 'typeLike',
+							},
+							{
+								format: ['camelCase'],
+								leadingUnderscore: 'forbid',
+								selector: ['variable', 'function', 'parameter'],
+							},
+						],
+					}
+				}
+				return {}
+			})(),
+		}
 	return {
 		...maxStrictTsConfig,
 		plugins: { ...maxStrictTsConfig.plugins, react: reactPlugin },
@@ -27,26 +70,7 @@ export const config: TEslintConfig = ((): TEslintConfig => {
 			],
 			[`${keyForPlugin}/jsx-indent`]: [disabled],
 			[`${keyForPlugin}/function-component-definition`]: [disabled],
-			[`@typescript-eslint/naming-convention`]: [
-				'error',
-				{
-					format: ['camelCase'],
-					selector: 'default',
-				},
-				{
-					format: ['camelCase'],
-					selector: 'variable',
-				},
-				{
-					format: ['camelCase', 'PascalCase'],
-					selector: 'variable',
-					types: ['function'],
-				},
-				{
-					format: ['camelCase', 'PascalCase'],
-					selector: 'function',
-				},
-			],
+			...maxConvetionRule,
 		},
 		settings: {
 			...(maxStrictTsConfig.settings ?? {}),
