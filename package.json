@@ -10,8 +10,10 @@
 		"markdownlint:check": "markdownlint-cli2 *.md",
 		"tsc:build:prettier": "rm -rf ./tools/prettier/js && tsc --build ./tools/prettier/ts",
 		"tsc:build:eslint": "rm -rf ./tools/eslint/js && tsc --build ./tools/eslint/ts",
-		"tsc:build:tools": "npm run tsc:build:prettier && npm run tsc:build:eslint",
-		"tsc:build:all": "npm run tsc:build:tools",
+		"tsc:build:vite": "rm -rf ./tools/vite/js && tsc --build ./tools/vite/ts",
+		"tsc:build:tools": "npm run tsc:build:prettier && npm run tsc:build:eslint && npm run tsc:build:vite",
+		"tsc:build:src": "tsc --build ./src/ts/tsconfig.json",
+		"tsc:build:all": "npm run tsc:build:tools && npm run tsc:build:src",
 		"lint": "npm run tsc:build:eslint && eslint --fix -c ./eslint.config.js ./",
 		"lint:check": "npm run tsc:build:eslint && eslint -c ./eslint.config.js ./"
 	},
@@ -28,12 +30,20 @@
 	"type": "module",
 	"devDependencies": {
 		"@types/node": "latest",
+		"@types/react": "latest",
+		"@types/react-dom": "latest",
 		"@typescript-eslint/eslint-plugin": "latest",
 		"@typescript-eslint/parser": "latest",
+		"@vitejs/plugin-react": "latest",
 		"eslint": "latest",
+		"eslint-plugin-react": "^7.37.5",
 		"markdownlint": "latest",
 		"markdownlint-cli2": "latest",
 		"prettier": "latest",
-		"typescript": "latest"
+		"react": "latest",
+		"react-dom": "latest",
+		"typescript": "latest",
+		"vite": "latest",
+		"vite-tsconfig-paths": "latest"
 	}
 }

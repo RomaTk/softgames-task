@@ -12,6 +12,8 @@
 	},
 	"references": [
 		{ "path": "./tools/prettier/ts" },
-		{ "path": "./tools/eslint/ts" }
+		{ "path": "./tools/eslint/ts" },
+		{ "path": "./tools/vite/ts" },
+		{ "path": "./src/ts" }
 	]
 }
