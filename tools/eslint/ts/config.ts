@@ -63,6 +63,12 @@ const config: TEslintConfig[] = [
 		...maxStrictTsConfig,
 		languageOptions: {
 			...maxStrictTsConfig.languageOptions,
+			globals: {
+				...(maxStrictTsConfig.languageOptions?.['globals'] ?? {}),
+				// Here is globals for browser (not all for browser - to control better what is added)
+				document: globals.browser.document,
+				window: globals.browser.window,
+			},
 			parserOptions: {
 				...(maxStrictTsConfig.languageOptions?.['parserOptions'] ?? {}),
 				project: ['./src/ts/tsconfig.json'],
