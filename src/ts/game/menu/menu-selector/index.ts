@@ -33,15 +33,17 @@ export class MenuSelector {
 
 	public display(): void {
 		this.viewObject.layout = {
-			height: '80%',
-			width: '80%',
-			display: 'flex',
-			justifyContent: 'center',
 			alignItems: 'center',
+			display: 'flex',
 			flexDirection: 'column',
+			height: '80%',
+			justifyContent: 'space-evenly',
+			left: '10%',
+			position: 'absolute',
+			top: '10%',
+			width: '80%',
 		}
 		this.displayBg()
-		this.viewObject.addChild(this.bg)
 		this.displayButtons()
 	}
 
@@ -65,9 +67,10 @@ export class MenuSelector {
 	protected displayBg(): void {
 		this.bg.layout = {
 			height: '100%',
-			width: '100%',
 			position: 'absolute',
+			width: '100%',
 		}
-		this.bg.tint = 0x333333
+		this.bg.tint = 0x945201
+		this.viewObject.addChild(this.bg)
 	}
 }

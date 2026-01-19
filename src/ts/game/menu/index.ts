@@ -18,6 +18,7 @@ export class Menu {
 	public resize(width: number, height: number): void {
 		this.viewObject.layout = {
 			height,
+			position: 'absolute',
 			width,
 		}
 	}
