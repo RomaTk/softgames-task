@@ -22,7 +22,11 @@ export class MagicWordsTask {
 		}
 		this.loadPromise = (async (): Promise<void> => {
 			const response = await fetch(this.endpoint)
-			this.data.parse(await response.json())
+			if (!response.ok) {
+				throw new Error(`HTTP error ${response.status}: ${response.statusText}`)
+			}
+			const json = await response.json()
+			this.data.parse(json)
 			await Promise.all([this.loadEmojies(), this.loadAvatars()])
 		})()
 		return this.loadPromise
