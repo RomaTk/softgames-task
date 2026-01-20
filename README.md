@@ -40,3 +40,7 @@ Install extensions for your IDE, for vscode check `.vscode/extensions.json`.
   not rely on it yet, as main contributor is new.
 - No eslint for json, html, markdown as no needed for now. Not many code there.
   May sense to add later if project will grow.
+- I changed the `@pixi/layout` imports to use `.js`, so
+  `"moduleResolution": "bundler"` is not required (I don't like to set it). This
+  may need to be revisited if the library is updated.
+- Important note, we can not use layouts before initialization of pixi app

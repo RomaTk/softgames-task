@@ -39,14 +39,55 @@ const config: TEslintConfig[] = [
 		},
 	},
 	{
+		files: ['tools/fix-esm-import/ts/**/*.ts'],
+		...maxStrictTsConfig,
+		languageOptions: {
+			...maxStrictTsConfig.languageOptions,
+			globals: {
+				...(maxStrictTsReactConfig.languageOptions?.['globals'] ?? {}),
+				// Here is globals for node (not all for node - to control better what is added)
+				console: globals.node.console,
+			},
+			parserOptions: {
+				...(maxStrictTsConfig.languageOptions?.['parserOptions'] ?? {}),
+				project: ['./tools/fix-esm-import/ts/tsconfig.json'],
+			},
+		},
+		rules: {
+			...maxStrictTsConfig.rules,
+			[`no-console`]: 'off',
+		},
+	},
+	{
 		files: ['src/ts/**/*.ts'],
 		...maxStrictTsConfig,
 		languageOptions: {
 			...maxStrictTsConfig.languageOptions,
+			globals: {
+				...(maxStrictTsConfig.languageOptions?.['globals'] ?? {}),
+				// Here is globals for browser (not all for browser - to control better what is added)
+				document: globals.browser.document,
+				window: globals.browser.window,
+			},
 			parserOptions: {
 				...(maxStrictTsConfig.languageOptions?.['parserOptions'] ?? {}),
 				project: ['./src/ts/tsconfig.json'],
 			},
+		},
+		rules: {
+			...maxStrictTsConfig.rules,
+			[`@typescript-eslint/prefer-readonly-parameter-types`]: [
+				'error',
+				{
+					allow: [
+						{
+							from: 'package',
+							name: ['default'],
+							package: 'emittery',
+						},
+					],
+				},
+			],
 		},
 	},
 	// TSX files (all react related files better to keep only in .tsx files)

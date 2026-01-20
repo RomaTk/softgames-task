@@ -4,6 +4,7 @@
 /tools/prettier/js/
 /tools/eslint/js/
 /tools/vite/js/
+/tools/fix-esm-import/js/
 /src/js
 
 /dist/
