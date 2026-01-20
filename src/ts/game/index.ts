@@ -2,6 +2,7 @@ import '@pixi/layout'
 import { Application } from 'pixi.js'
 import { Menu } from './menu/index.js'
 import { OnTickResizeObserver } from './resize-observer.js'
+import { MagicWordsTask } from './tasks/magic-words/index.js'
 
 export type TLoadStatus =
 	| {
@@ -19,6 +20,7 @@ export class Game {
 	protected readonly resizeObserver: OnTickResizeObserver
 	// Max size in pixels for width or height
 	protected readonly maxPixelsSize: number
+	protected readonly tasks: Set<MagicWordsTask>
 
 	public constructor() {
 		this.application = new Application()
@@ -44,6 +46,7 @@ export class Game {
 				},
 			],
 		})
+		this.tasks = new Set()
 		this.maxPixelsSize = 2000
 		this.resizeObserver = new OnTickResizeObserver(() => {
 			this.resize()
@@ -83,10 +86,23 @@ export class Game {
 		this.application.canvas.style.width = `${document.body.clientWidth}px`
 		this.application.canvas.style.height = `${document.body.clientHeight}px`
 		this.menu.resize(document.body.clientWidth, document.body.clientHeight)
+		this.tasks.forEach(
+			(task: {
+				readonly resize: (width: number, height: number) => void
+			}) => {
+				task.resize(
+					document.body.clientWidth,
+					document.body.clientHeight,
+				)
+			},
+		)
 	}
 
 	public display(): void {
-		this.menu.display(true)
+		this.menu.display(false)
+		this.launchMagicWordsTask().catch((err: unknown) => {
+			console.error('Failed to launch Magic Words task', err)
+		})
 		this.application.stage.addChild(this.menu.viewObject)
 		this.resizeObserver.observe(document.body)
 	}
@@ -107,5 +123,13 @@ export class Game {
 		}
 
 		return window.devicePixelRatio * (this.maxPixelsSize / providedMaxSide)
+	}
+
+	protected async launchMagicWordsTask(): Promise<void> {
+		const task = new MagicWordsTask()
+		this.tasks.add(task)
+		const toAwait = task.display()
+		this.application.stage.addChild(task.viewObject)
+		await toAwait
 	}
 }
