@@ -56,6 +56,7 @@ export class MagicWordsTask {
 				countIncrement = 1
 			if (!allCount) {
 				resolve()
+				return
 			}
 			let loadedCount = 0
 
