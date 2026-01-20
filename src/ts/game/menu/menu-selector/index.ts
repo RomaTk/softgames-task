@@ -1,5 +1,11 @@
 import { Container, Sprite, Texture } from 'pixi.js'
-import { MenuSelectorButton } from './button.js'
+import { MenuSelectorButton, type TMenuSelectorButtonEvents } from './button.js'
+import type Emittery from 'emittery'
+
+export type TMenuSelectorButtonConfig = {
+	readonly label: string
+	readonly onClick: () => void | Promise<void>
+}
 
 export class MenuSelector {
 	public readonly viewObject: Container
@@ -8,30 +14,48 @@ export class MenuSelector {
 	protected readonly bg: Sprite
 	// Use array, as sequence of buttons matters
 	protected readonly buttons: MenuSelectorButton[]
+	protected readonly buttonToConfig: WeakMap<
+		object,
+		TMenuSelectorButtonConfig
+	>
 
-	public constructor() {
+	// Use array, as sequence of buttons matters
+	public constructor(config: readonly TMenuSelectorButtonConfig[]) {
 		this.static = MenuSelector
 		this.viewObject = new Container()
 		this.bg = new Sprite(Texture.WHITE)
-		this.buttons = this.static.createButtons([
-			'Ace of Shadows',
-			'Magic Words',
-			'Phoen ix Flame',
-		])
+
+		const { arr, buttonToConfig } = this.static.createButtons(config)
+		this.buttons = arr
+		this.buttonToConfig = buttonToConfig
+
+		this.subscribeOnClick()
 	}
 
 	protected static createButtons(
-		labels: readonly string[],
-	): MenuSelectorButton[] {
-		const buttons: MenuSelectorButton[] = []
-		for (const label of labels) {
-			const button = new MenuSelectorButton(label)
+		configs: readonly TMenuSelectorButtonConfig[],
+	): {
+		arr: MenuSelectorButton[]
+		buttonToConfig: WeakMap<MenuSelectorButton, TMenuSelectorButtonConfig>
+	} {
+		const buttonToConfig = new WeakMap<
+				MenuSelectorButton,
+				TMenuSelectorButtonConfig
+			>(),
+			buttons: MenuSelectorButton[] = []
+
+		for (const config of configs) {
+			const button = new MenuSelectorButton(config.label)
 			buttons.push(button)
+			buttonToConfig.set(button, config)
 		}
-		return buttons
+		return {
+			arr: buttons,
+			buttonToConfig,
+		}
 	}
 
-	public display(): void {
+	public display(isVisible: boolean): void {
 		this.viewObject.layout = {
 			alignItems: 'center',
 			display: 'flex',
@@ -43,8 +67,17 @@ export class MenuSelector {
 			top: '10%',
 			width: '80%',
 		}
+		this.viewObject.visible = isVisible
 		this.displayBg()
 		this.displayButtons()
+	}
+
+	public close(): void {
+		this.viewObject.visible = false
+	}
+
+	public open(): void {
+		this.viewObject.visible = true
 	}
 
 	public destroy(): void {
@@ -72,5 +105,17 @@ export class MenuSelector {
 		}
 		this.bg.tint = 0x945201
 		this.viewObject.addChild(this.bg)
+	}
+
+	protected subscribeOnClick(): void {
+		this.buttons.forEach(
+			(button: {
+				readonly emitter: Emittery<TMenuSelectorButtonEvents>
+			}) => {
+				button.emitter.on('buttonClicked', async () => {
+					await this.buttonToConfig.get(button)?.onClick()
+				})
+			},
+		)
 	}
 }

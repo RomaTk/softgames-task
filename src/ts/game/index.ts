@@ -22,7 +22,28 @@ export class Game {
 
 	public constructor() {
 		this.application = new Application()
-		this.menu = new Menu()
+		this.menu = new Menu({
+			tasks: [
+				{
+					label: 'Ace of Shadows',
+					launchTask: (): void => {
+						console.log('Ace of Shadows clicked')
+					},
+				},
+				{
+					label: 'Magic Words',
+					launchTask: (): void => {
+						console.log('Magic Words clicked')
+					},
+				},
+				{
+					label: 'Phoenix Flame',
+					launchTask: (): void => {
+						console.log('Phoenix Flame clicked')
+					},
+				},
+			],
+		})
 		this.maxPixelsSize = 2000
 		this.resizeObserver = new OnTickResizeObserver(() => {
 			this.resize()
@@ -65,7 +86,7 @@ export class Game {
 	}
 
 	public display(): void {
-		this.menu.display()
+		this.menu.display(true)
 		this.application.stage.addChild(this.menu.viewObject)
 		this.resizeObserver.observe(document.body)
 	}

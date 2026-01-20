@@ -43,6 +43,7 @@
 		"@typescript-eslint/eslint-plugin": "latest",
 		"@typescript-eslint/parser": "latest",
 		"@vitejs/plugin-react": "latest",
+		"emittery": "latest",
 		"eslint": "latest",
 		"eslint-plugin-react": "latest",
 		"markdownlint": "latest",

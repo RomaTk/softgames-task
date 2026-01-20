@@ -74,6 +74,21 @@ const config: TEslintConfig[] = [
 				project: ['./src/ts/tsconfig.json'],
 			},
 		},
+		rules: {
+			...maxStrictTsConfig.rules,
+			[`@typescript-eslint/prefer-readonly-parameter-types`]: [
+				'error',
+				{
+					allow: [
+						{
+							from: 'package',
+							name: ['default'],
+							package: 'emittery',
+						},
+					],
+				},
+			],
+		},
 	},
 	// TSX files (all react related files better to keep only in .tsx files)
 	{
