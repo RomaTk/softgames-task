@@ -42,10 +42,12 @@ export class MagicWordsTask {
 		this.viewObject.addChild(this.loadForTask.viewObject)
 		await this.load()
 		this.loadForTask.destroy()
+		delete this.loadForTask
 	}
 
 	public destroy(): void {
 		this.loadForTask?.destroy()
+		delete this.loadForTask
 		this.viewObject.destroy(true)
 	}
 
