@@ -8,7 +8,7 @@ export const config: TEslintConfig = ((): TEslintConfig => {
 	const disabled = 0,
 		enabled = 1,
 		keyForPlugin = 'react',
-		maxConvetionRule = {
+		maxConventionRule = {
 			...((): TRules => {
 				const current =
 						maxStrictTsConfig.rules?.[
@@ -70,7 +70,7 @@ export const config: TEslintConfig = ((): TEslintConfig => {
 			],
 			[`${keyForPlugin}/jsx-indent`]: [disabled],
 			[`${keyForPlugin}/function-component-definition`]: [disabled],
-			...maxConvetionRule,
+			...maxConventionRule,
 		},
 		settings: {
 			...(maxStrictTsConfig.settings ?? {}),
