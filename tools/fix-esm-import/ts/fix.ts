@@ -8,12 +8,12 @@ const options = {
 	// 1. Prefix: (import/from + quote)
 	// 2. Path:   (./something)
 	// 3. Suffix: (quote)
-	from: /(?<temp3>(?:from|import)(?:\s+|\s*\(\s*)['"])(?<temp2>\.[^'"]+)(?<temp1>['"])/gu,
+	from: /(?<prefix>(?:from|import)(?:\s+|\s*\(\s*)['"])(?<path>\.[^'"]+)(?<suffix>['"])/gu,
 
 	to: (match: string): string => {
 		// We look for the path inside the quotes
 		const parts =
-			/(?<temp3>(?:from|import)(?:\s+|\s*\(\s*)['"])(?<temp2>\.[^'"]+)(?<temp1>['"])/u.exec(
+			/(?<prefix>(?:from|import)(?:\s+|\s*\(\s*)['"])(?<path>\.[^'"]+)(?<suffix>['"])/u.exec(
 				match,
 			)
 
