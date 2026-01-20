@@ -5,7 +5,9 @@ export class Data {
 		avatars: z.array(
 			z.object({
 				name: z.string(),
-				position: z.string(),
+				position: z
+					.string()
+					.refine((val) => val === 'left' || val === 'right'),
 				url: z.string(),
 			}),
 		),
@@ -32,6 +34,15 @@ export class Data {
 			throw new Error('Data not parsed yet')
 		}
 		return this.parsedData.emojies
+	}
+
+	public get dialogue(): readonly z.infer<
+		(typeof Data)['dataSchema']
+	>['dialogue'][number][] {
+		if (!this.parsedData) {
+			throw new Error('Data not parsed yet')
+		}
+		return this.parsedData.dialogue
 	}
 
 	public get avatars(): readonly z.infer<

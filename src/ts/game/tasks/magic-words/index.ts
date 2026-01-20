@@ -1,11 +1,18 @@
 import { Assets, Container } from 'pixi.js'
 import { Data } from './data.js'
+import { Dialogue } from './dialogue/index.js'
 import { LoadForTask } from '../load.js'
 
 export class MagicWordsTask {
 	public readonly viewObject: Container
 	protected loadPromise?: Promise<void>
 	protected loadForTask?: LoadForTask
+	protected dialogue?: Dialogue<Data>
+	// We save this data, as objects created dynamically and as soon as created - we need to set the value
+	protected lastResizeData?: {
+		readonly width: number
+		readonly height: number
+	}
 	protected readonly endpoint: string
 	protected readonly data: Data
 
@@ -23,32 +30,65 @@ export class MagicWordsTask {
 		this.loadPromise = (async (): Promise<void> => {
 			const response = await fetch(this.endpoint)
 			if (!response.ok) {
-				throw new Error(`HTTP error ${response.status}: ${response.statusText}`)
+				throw new Error(
+					`HTTP error ${response.status}: ${response.statusText}`,
+				)
 			}
-			const json = await response.json()
-			this.data.parse(json)
+			this.data.parse(await response.json())
 			await Promise.all([this.loadEmojies(), this.loadAvatars()])
 		})()
 		return this.loadPromise
 	}
 
 	public resize(width: number, height: number): void {
+		this.lastResizeData = { height, width }
 		this.loadForTask?.resize(width, height)
+		this.dialogue?.resize(width, height)
 	}
 
 	public async display(): Promise<void> {
-		this.loadForTask ??= new LoadForTask()
-		this.loadForTask.display()
-		this.viewObject.addChild(this.loadForTask.viewObject)
+		this.displayLoading()
 		await this.load()
-		this.loadForTask.destroy()
-		delete this.loadForTask
+		this.displayDialogue()
+		this.destroyLoadForTask()
 	}
 
 	public destroy(): void {
+		this.destroyLoadForTask()
+		this.destroyDialogue()
+		this.viewObject.destroy(true)
+	}
+
+	protected displayLoading(): void {
+		this.loadForTask ??= new LoadForTask()
+		const noSize = 0
+		this.loadForTask.resize(
+			this.lastResizeData?.width ?? noSize,
+			this.lastResizeData?.height ?? noSize,
+		)
+		this.loadForTask.display()
+		this.viewObject.addChild(this.loadForTask.viewObject)
+	}
+
+	protected displayDialogue(): void {
+		const noSize = 0
+		this.dialogue ??= new Dialogue(this.data)
+		this.dialogue.resize(
+			this.lastResizeData?.width ?? noSize,
+			this.lastResizeData?.height ?? noSize,
+		)
+		this.dialogue.display()
+		this.viewObject.addChild(this.dialogue.viewObject)
+	}
+
+	protected destroyLoadForTask(): void {
 		this.loadForTask?.destroy()
 		delete this.loadForTask
-		this.viewObject.destroy(true)
+	}
+
+	protected destroyDialogue(): void {
+		this.dialogue?.destroy()
+		delete this.dialogue
 	}
 
 	// Load emojis to browser cache, we predict that server sends correct data, so we load only what we need (no checks in dialogs)
