@@ -4,7 +4,13 @@ import {
 	LayoutSprite,
 	LayoutText,
 } from '@pixi/layout/components'
-import { Texture } from 'pixi.js'
+import {
+	EventEmitter,
+	Graphics,
+	HTMLText,
+	Texture,
+	measureHtmlText,
+} from 'pixi.js'
 
 export type TMessageOptions = {
 	readonly author: {
@@ -22,27 +28,35 @@ export class Message {
 	protected readonly messageContainer: LayoutContainer
 	protected readonly messageText: LayoutHTMLText
 	protected readonly authorAvatar: LayoutSprite
+	// HACK to cover the sharp corner of the message container
+	protected readonly cornerRect: Graphics
 
 	public constructor(options: TMessageOptions) {
 		this.options = options
 
 		this.viewObject = this.generateViewObject()
+		this.cornerRect = this.generateCornerRect()
 		this.authorName = this.generateAuthorName()
 		this.authorAvatar = this.generateAvatar()
 		this.messageText = this.generateMessageText()
 		this.messageContainer = this.generateMessageContainer()
 
-		this.messageContainer.addChild(this.authorName)
+		this.display()
+	}
+
+	// It is public but for this class no sense to be used outside
+	public display(): void {
+		this.messageContainer.addChild(this.authorName, this.messageText)
 		this.viewObject.addChild(this.authorAvatar)
 		this.viewObject.addChild(this.messageContainer)
-
-		console.log('Created message:', this)
 	}
 
 	public destroy(): void {
+		this.cornerRect.destroy(true)
 		this.authorName.destroy(true)
 		this.authorAvatar.destroy(true)
 		this.messageText.destroy(true)
+		this.messageContainer.destroy(true)
 		this.viewObject.destroy(true)
 	}
 
@@ -51,11 +65,18 @@ export class Message {
 			style: {
 				fill: 0xff1010,
 				wordWrap: true,
-				wordWrapWidth: 400,
+				fontSize: 24,
 			},
-			text: this.options.text,
+			text:
+				this.options.text +
+				'lorem ipsum dolor sit amet consectetur adipiscing elit ',
 		})
-		messageText.layout = {}
+		messageText.layout = {
+			height: '100%',
+			width: 'intrinsic',
+			maxWidth: '100%',
+			minWidth: '100%',
+		}
 		return messageText
 	}
 
@@ -67,7 +88,7 @@ export class Message {
 		})
 		avatar.layout = {
 			width: 100,
-			maxHeight: '100%',
+			maxHeight: '50%',
 			aspectRatio: 1,
 			objectFit: 'cover',
 			alignSelf: 'flex-end',
@@ -85,7 +106,7 @@ export class Message {
 		})
 		authorName.layout = {
 			height: '100%',
-			maxHeight: 20,
+			maxHeight: authorName.height,
 			maxWidth: '100%',
 			objectFit: 'scale-down',
 		}
@@ -106,21 +127,51 @@ export class Message {
 						? 'flex-start'
 						: 'flex-end',
 				maxWidth: '75%',
+				marginTop: 10,
 			},
 		})
 	}
 
 	protected generateMessageContainer(): LayoutContainer {
-		return new LayoutContainer({
+		const layoutContainer = new LayoutContainer({
 			layout: {
 				alignItems: 'flex-start',
 				backgroundColor: 0x3495eb,
 				display: 'flex',
 				flexDirection: 'column',
-				width: 'intrinsic',
+				width: 'auto',
 				minWidth: '20%',
+				maxWidth: '75%',
 				height: 'auto',
+				marginBottom: 10,
+				borderRadius: 10,
+				padding: 10,
+				gap: 5,
 			},
 		})
+
+		layoutContainer.addChild(this.cornerRect)
+
+		return layoutContainer
+	}
+
+	protected generateCornerRect(): Graphics {
+		const cornerRect = new Graphics()
+			.roundRect(0, 0, 20, 20, 0)
+			.fill(0x3495eb)
+		cornerRect.layout = {
+			position: 'absolute',
+			...((): { right?: number; left?: number } => {
+				if (this.options.position === 'left') {
+					return { left: 0 }
+				}
+				return { right: 0 }
+			})(),
+			bottom: 0,
+			height: '50%',
+			objectFit: 'fill',
+			width: '50%',
+		}
+		return cornerRect
 	}
 }
