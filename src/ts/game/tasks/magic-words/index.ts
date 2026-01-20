@@ -45,7 +45,7 @@ export class MagicWordsTask {
 		this.viewObject.destroy(true)
 	}
 
-	// Load emojies to browser cache, we predict that server sends correct data, so we load only what we need (no checks in dialogs)
+	// Load emojis to browser cache, we predict that server sends correct data, so we load only what we need (no checks in dialogs)
 	protected async loadEmojies(): Promise<void> {
 		return new Promise((resolve, reject) => {
 			const allCount = this.data.emojies.length,
