@@ -66,7 +66,9 @@ const config: TEslintConfig[] = [
 			globals: {
 				...(maxStrictTsConfig.languageOptions?.['globals'] ?? {}),
 				// Here is globals for browser (not all for browser - to control better what is added)
+				[`Image`]: globals.browser.Image,
 				document: globals.browser.document,
+				fetch: globals.browser.fetch,
 				window: globals.browser.window,
 			},
 			parserOptions: {
@@ -84,6 +86,11 @@ const config: TEslintConfig[] = [
 							from: 'package',
 							name: ['default'],
 							package: 'emittery',
+						},
+						{
+							from: 'package',
+							name: ['Ticker'],
+							package: 'pixi.js',
 						},
 					],
 				},

@@ -55,6 +55,7 @@
 		"replace-in-file": "latest",
 		"typescript": "latest",
 		"vite": "latest",
-		"vite-tsconfig-paths": "latest"
+		"vite-tsconfig-paths": "latest",
+		"zod": "latest"
 	}
 }
