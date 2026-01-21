@@ -82,7 +82,7 @@ export class AceOfShadowsTask<App extends Application> {
 		)
 	}
 
-	public async display(): Promise<void> {
+	public display(): void {
 		this.viewObject.addChild(this.decks.from)
 		this.viewObject.addChild(this.decks.to)
 		this.decks.from.x = -400

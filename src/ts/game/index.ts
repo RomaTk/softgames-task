@@ -1,6 +1,6 @@
 import '@pixi/layout'
 import * as Pixi from 'pixi.js'
-import { Application } from 'pixi.js'
+import { Application, Container } from 'pixi.js'
 import { MagicWordsTask } from './tasks/magic-words/index.js'
 import { Menu } from './menu/index.js'
 import { OnTickResizeObserver } from './resize-observer.js'
@@ -18,6 +18,10 @@ export type TLoadStatus =
 			loaded: false
 			error?: unknown
 	  }
+export type TTask = {
+	readonly destroy: () => void
+	readonly resize: (width: number, height: number) => void
+}
 
 export class Game {
 	protected loadPromise?: Promise<TLoadStatus>
@@ -26,9 +30,8 @@ export class Game {
 	protected readonly resizeObserver: OnTickResizeObserver
 	// Max size in pixels for width or height
 	protected readonly maxPixelsSize: number
-	protected readonly tasks: Set<
-		MagicWordsTask | AceOfShadowsTask<Application>
-	>
+	protected readonly tasks: Set<TTask>
+	protected readonly tasksContainer: Pixi.Container
 
 	public constructor() {
 		this.application = new Application()
@@ -37,13 +40,13 @@ export class Game {
 				{
 					label: 'Ace of Shadows',
 					launchTask: (): void => {
-						console.log('Ace of Shadows clicked')
+						this.launchAceOfShadowsTask()
 					},
 				},
 				{
 					label: 'Magic Words',
-					launchTask: (): void => {
-						console.log('Magic Words clicked')
+					launchTask: async (): Promise<void> => {
+						await this.launchMagicWordsTask()
 					},
 				},
 				{
@@ -54,6 +57,7 @@ export class Game {
 				},
 			],
 		})
+		this.tasksContainer = new Container()
 		this.tasks = new Set()
 		this.maxPixelsSize = 2000
 		this.resizeObserver = new OnTickResizeObserver(() => {
@@ -108,10 +112,11 @@ export class Game {
 
 	public display(): void {
 		this.menu.display(false)
-		this.launchAceOfShadowsTask()
+		// this.launchAceOfShadowsTask()
 		// this.launchMagicWordsTask().catch((err: unknown) => {
 		// 	console.error('Failed to launch Magic Words task', err)
 		// })
+		this.application.stage.addChild(this.tasksContainer)
 		this.application.stage.addChild(this.menu.viewObject)
 		this.resizeObserver.observe(document.body)
 	}
@@ -119,6 +124,7 @@ export class Game {
 	public destroy(): void {
 		this.resizeObserver.disconnect()
 		this.menu.destroy()
+		this.destoyTasks()
 		this.application.destroy(true)
 	}
 
@@ -134,20 +140,51 @@ export class Game {
 		return window.devicePixelRatio * (this.maxPixelsSize / providedMaxSide)
 	}
 
+	protected destoyTasks(except?: unknown): void {
+		this.tasks.forEach((task: TTask) => {
+			if (typeof except === 'function' && task instanceof except) {
+				return
+			}
+			task.destroy()
+			this.tasks.delete(task)
+		})
+	}
+
+	protected isTaskRunning(taskClass: unknown): boolean {
+		const found = this.tasks.values().find((task: TTask) => {
+			if (typeof taskClass === 'function' && task instanceof taskClass) {
+				return true
+			}
+			return false
+		})
+		if (found) {
+			return true
+		}
+		return false
+	}
+
 	protected async launchMagicWordsTask(): Promise<void> {
+		if (this.isTaskRunning(MagicWordsTask)) {
+			return
+		}
 		const task = new MagicWordsTask()
 		this.tasks.add(task)
 		task.resize(document.body.clientWidth, document.body.clientHeight)
 		const toAwait = task.display()
-		this.application.stage.addChild(task.viewObject)
+		this.tasksContainer.addChild(task.viewObject)
 		await toAwait
+		this.destoyTasks(MagicWordsTask)
 	}
 
 	protected launchAceOfShadowsTask(): void {
+		if (this.isTaskRunning(AceOfShadowsTask)) {
+			return
+		}
 		const task = new AceOfShadowsTask(this.application)
 		this.tasks.add(task)
 		task.resize(document.body.clientWidth, document.body.clientHeight)
 		task.display()
-		this.application.stage.addChild(task.viewObject)
+		this.tasksContainer.addChild(task.viewObject)
+		this.destoyTasks(AceOfShadowsTask)
 	}
 }
