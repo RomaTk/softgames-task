@@ -15,7 +15,7 @@ export class MagicWordsTask {
 	}
 	protected readonly endpoint: string
 	protected readonly data: Data
-	// So can be changed in subclasses
+	// Can be overridden in subclasses to customize behavior
 	protected readonly static: typeof MagicWordsTask
 
 	public constructor() {
