@@ -117,36 +117,34 @@ export class MagicWordsTask {
 		delete this.dialogue
 	}
 
-	// Load emojis to browser cache, we predict that server sends correct data, so we load only what we need (no checks in dialogs)
 	protected async loadEmojies(): Promise<void> {
-		return new Promise((resolve, reject) => {
-			const allCount = this.data.emojies.length,
-				countIncrement = 1
-			if (!allCount) {
-				resolve()
-				return
-			}
-			let loadedCount = 0
+		if (!this.data.emojies.length) {
+			return
+		}
 
-			this.data.emojies.forEach(
-				(emoji: { readonly url: string; readonly name: string }) => {
-					this.static
-						.urlToBase64(emoji.url)
-						.then((result: string): void => {
-							this.data.addBase64ToEmojie(emoji.name, result)
-							loadedCount += countIncrement
-							if (loadedCount >= allCount) {
-								resolve()
-							}
-						})
-						.catch((): void => {
-							reject(
-								new Error(`Failed to load emoji ${emoji.url}`),
-							)
-						})
+		const results = await Promise.all(
+			this.data.emojies.map(
+				async (emoji: {
+					readonly url: string
+					readonly name: string
+				}): Promise<{ name: string; base64: string }> => {
+					const base64Data = await this.static.urlToBase64(emoji.url)
+					return {
+						base64: base64Data,
+						name: emoji.name,
+					}
 				},
-			)
-		})
+			),
+		)
+		results.every(
+			(el: {
+				readonly name: string
+				readonly base64: string
+			}): boolean => {
+				this.data.addBase64ToEmojie(el.name, el.base64)
+				return true
+			},
+		)
 	}
 
 	protected async loadAvatars(): Promise<void> {
