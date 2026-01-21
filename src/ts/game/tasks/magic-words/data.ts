@@ -25,7 +25,7 @@ export class Data {
 			}),
 		),
 	})
-	// So can be changed in subclasses
+	// Allows subclasses to override the static reference for customized parsing behavior
 	protected static: typeof Data
 	protected parsedData?: z.infer<(typeof Data)['dataSchema']>
 
