@@ -46,6 +46,7 @@
 		"emittery": "latest",
 		"eslint": "latest",
 		"eslint-plugin-react": "latest",
+		"gsap": "latest",
 		"markdownlint": "latest",
 		"markdownlint-cli2": "latest",
 		"pixi.js": "latest",

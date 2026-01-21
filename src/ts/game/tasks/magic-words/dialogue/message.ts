@@ -1,16 +1,20 @@
+/* eslint-disable max-statements */
 import {
 	LayoutContainer,
 	LayoutHTMLText,
 	LayoutSprite,
 	LayoutText,
 } from '@pixi/layout/components'
+import { text } from 'node:stream/consumers'
 import {
 	EventEmitter,
 	Graphics,
 	HTMLText,
 	Texture,
-	measureHtmlText,
+	HTMLTextStyle,
+	Ticker,
 } from 'pixi.js'
+import gsap from 'gsap'
 
 export type TMessageOptions = {
 	readonly author: {
@@ -38,7 +42,7 @@ export class Message {
 		this.cornerRect = this.generateCornerRect()
 		this.authorName = this.generateAuthorName()
 		this.authorAvatar = this.generateAvatar()
-		this.messageText = this.generateMessageText()
+		this.messageText = this.generateMessageText(true)
 		this.messageContainer = this.generateMessageContainer()
 
 		this.display()
@@ -46,9 +50,15 @@ export class Message {
 
 	// It is public but for this class no sense to be used outside
 	public display(): void {
-		this.messageContainer.addChild(this.authorName, this.messageText)
+		this.messageContainer.addChild(this.messageText)
 		this.viewObject.addChild(this.authorAvatar)
 		this.viewObject.addChild(this.messageContainer)
+
+		this.textLayoutFix()
+	}
+
+	public resize(): void {
+		this.textLayoutFix()
 	}
 
 	public destroy(): void {
@@ -60,23 +70,46 @@ export class Message {
 		this.viewObject.destroy(true)
 	}
 
-	protected generateMessageText(): LayoutHTMLText {
+	protected textLayoutFix(): void {
+		// POSSIBLE_BUG layout update specific issue (need to investigate more)
+		gsap.delayedCall(0.5, (): void => {
+			const findOutMinSizeMessageText = this.generateMessageText(false)
+
+			// Full size
+			if (
+				findOutMinSizeMessageText.width + 30 <
+				this.messageContainer.width
+			) {
+				this.messageText.layout = {
+					width: findOutMinSizeMessageText.width,
+					maxWidth: '100%',
+					height: findOutMinSizeMessageText.height + 40,
+				}
+			} else {
+				this.messageText.layout = {
+					width: '100%',
+					height:
+						((findOutMinSizeMessageText.width + 30) /
+							this.messageContainer.width) *
+							findOutMinSizeMessageText.height +
+						20,
+				}
+			}
+
+			findOutMinSizeMessageText.destroy(true)
+		})
+	}
+
+	protected generateMessageText(isWordWrap: boolean): LayoutHTMLText {
 		const messageText = new LayoutHTMLText({
 			style: {
 				fill: 0xff1010,
-				wordWrap: true,
-				fontSize: 24,
+				wordWrap: isWordWrap,
+				fontSize: 20,
 			},
-			text:
-				this.options.text +
-				'lorem ipsum dolor sit amet consectetur adipiscing elit ',
+			text: this.options.text,
 		})
-		messageText.layout = {
-			height: '100%',
-			width: 'intrinsic',
-			maxWidth: '100%',
-			minWidth: '100%',
-		}
+
 		return messageText
 	}
 
@@ -100,15 +133,14 @@ export class Message {
 		const authorName = new LayoutText({
 			style: {
 				fill: 0xff1010,
-				fontSize: 24,
+				fontSize: '20%',
 			},
 			text: this.options.author.name,
 		})
 		authorName.layout = {
-			height: '100%',
-			maxHeight: authorName.height,
 			maxWidth: '100%',
-			objectFit: 'scale-down',
+			width: 'intrinsic',
+			height: 'intrinsic',
 		}
 		return authorName
 	}
@@ -117,8 +149,6 @@ export class Message {
 		return new LayoutContainer({
 			layout: {
 				flexShrink: 0,
-				// HACK need to set width not intrinsic and then maxWidth to make it work correctly
-				width: '100%',
 				display: 'flex',
 				flexDirection:
 					this.options.position === 'left' ? 'row' : 'row-reverse',
@@ -126,7 +156,7 @@ export class Message {
 					this.options.position === 'left'
 						? 'flex-start'
 						: 'flex-end',
-				maxWidth: '75%',
+				width: '75%',
 				marginTop: 10,
 			},
 		})
@@ -139,12 +169,10 @@ export class Message {
 				backgroundColor: 0x3495eb,
 				display: 'flex',
 				flexDirection: 'column',
-				width: 'auto',
-				minWidth: '20%',
-				maxWidth: '75%',
-				height: 'auto',
 				marginBottom: 10,
 				borderRadius: 10,
+				maxWidth: '100%',
+				objectFit: 'fill',
 				padding: 10,
 				gap: 5,
 			},

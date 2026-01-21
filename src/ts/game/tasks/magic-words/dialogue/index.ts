@@ -47,6 +47,13 @@ export class Dialogue<Data extends DataFromEndpoint> {
 			height,
 			width,
 		}
+		this.messages.forEach(
+			(message: {
+				readonly resize: (width: number, height: number) => void
+			}) => {
+				message.resize(width, height)
+			},
+		)
 	}
 
 	public display(): void {
