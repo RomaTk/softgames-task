@@ -79,12 +79,12 @@ export class Data {
 		if (!this.parsedData) {
 			throw new Error('Data not parsed yet')
 		}
-		const emojie = this.parsedData.emojies.find(
+		const emoji = this.parsedData.emojies.find(
 			(em: { readonly name: string }) => em.name === name,
 		)
-		if (!emojie) {
-			throw new Error(`Emojie with name ${name} not found`)
+		if (!emoji) {
+			throw new Error(`Emoji with name ${name} not found`)
 		}
-		emojie.base64 = base64Data
+		emoji.base64 = base64Data
 	}
 }
