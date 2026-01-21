@@ -6,7 +6,7 @@ import { type Application, Container, Sprite, Texture } from 'pixi.js'
 import { Deck } from './deck.js'
 import { createCardBack } from './create-skin.js'
 import { gsap } from 'gsap'
-import { th } from 'zod/v4/locales'
+import { skewRecalculation } from './skew-recalculation/index.js'
 
 export class AceOfShadowsTask<App extends Application> {
 	public readonly viewObject: Container
@@ -27,7 +27,7 @@ export class AceOfShadowsTask<App extends Application> {
 	public constructor(application: App) {
 		this.viewObject = new Container()
 		this.flyingCardsContainer = new Container()
-		this.numberCards = 144
+		this.numberCards = 10
 
 		const skew = {
 			x: Math.random() * 0.05,
@@ -159,11 +159,11 @@ export class AceOfShadowsTask<App extends Application> {
 		const prop = this.decks.to.getPropertiesForTopCard(card, index)
 		prop.position.x += this.decks.to.x
 		prop.position.y += this.decks.to.y
-		const posion = {
-			x: startPosition.x,
-			y: startPosition.y,
+		const position = {
+			...startPosition,
 		}
-		const duration = 2
+		const duration = 2,
+			noDelayOnStart = 0
 		const cardTimeline = gsap
 			.timeline()
 			.add(() => {
@@ -182,7 +182,7 @@ export class AceOfShadowsTask<App extends Application> {
 					return
 				}
 				this.decks.to.addCard(card, false)
-			}, 0)
+			}, noDelayOnStart)
 			.add(() => {
 				const globalTimeLine = this.animationTimeline
 				if (!globalTimeLine) {
@@ -192,7 +192,6 @@ export class AceOfShadowsTask<App extends Application> {
 					this.decks.to.addCard(card, false)
 					return
 				}
-				console.log('Reversing animation')
 				const deAttachedCard = this.decks.from.getTopCard()
 				this.flyingCardsContainer.addChildAt(deAttachedCard, 0)
 				// To make sure to change position in the same render frame
@@ -200,7 +199,7 @@ export class AceOfShadowsTask<App extends Application> {
 			}, duration)
 
 			.fromTo(
-				posion,
+				position,
 				{
 					x: startPosition.x,
 					y: startPosition.y,
@@ -211,12 +210,12 @@ export class AceOfShadowsTask<App extends Application> {
 					duration,
 					onUpdate: () => {
 						if (card.parent === this.flyingCardsContainer) {
-							card.position.set(posion.x, posion.y)
+							card.position.set(position.x, position.y)
 						}
 					},
 					ease: 'power2.inOut',
 				},
-				0,
+				noDelayOnStart,
 			)
 			.fromTo(
 				card.skew,
@@ -227,81 +226,29 @@ export class AceOfShadowsTask<App extends Application> {
 					duration,
 					onUpdate: () => {
 						if (card.parent === this.flyingCardsContainer) {
-							// First half: overshoot in positive direction, second half: overshoot in negative direction
-							const t = cardTimeline.progress()
-							// Peaks depend on card index: lower index = bigger first peak, smaller second
-							const maxPeak1 = 2.5,
-								minPeak1 = 0.5
-							const maxPeak2 = 0.01,
-								minPeak2 = 0.3
-							const norm = Math.max(1, this.numberCards - 1)
-							const idxNorm = 1 - index / norm
-							const peak1 =
-								minPeak1 + (maxPeak1 - minPeak1) * idxNorm
-							const peak2 =
-								minPeak2 + (maxPeak2 - minPeak2) * idxNorm
-							let skewX, skewY
-							if (t < 0.5) {
-								// First half: positive overshoot
-								const t1 = t / 0.5
-								const arc = -4 * Math.pow(t1 - 0.5, 2) + 1
-								const midSkewX =
-									startSkew.x +
-									(prop.skew.x - startSkew.x) * (1 + peak1)
-								const midSkewY =
-									startSkew.y +
-									(prop.skew.y - startSkew.y) * (1 + peak1)
-								skewX =
-									startSkew.x * (1 - t1) +
-									midSkewX *
-										arc *
-										(1 - Math.abs(2 * t1 - 1)) +
-									prop.skew.x * t1
-								skewY =
-									startSkew.y * (1 - t1) +
-									midSkewY *
-										arc *
-										(1 - Math.abs(2 * t1 - 1)) +
-									prop.skew.y * t1
-							} else {
-								// Second half: much smaller, gentler negative overshoot
-								const t2 = (t - 0.5) / 0.5
-								// Use a much flatter, less pronounced arc
-								const arc =
-									0.2 * (1 - Math.pow(t2 - 0.5, 2) * 4)
-								const midSkewX =
-									startSkew.x -
-									(prop.skew.x - startSkew.x) * (1 + peak2)
-								const midSkewY =
-									startSkew.y -
-									(prop.skew.y - startSkew.y) * (1 + peak2)
-								skewX =
-									prop.skew.x * (1 - t2) +
-									midSkewX *
-										arc *
-										(1 - Math.abs(2 * t2 - 1)) +
-									prop.skew.x * t2
-								skewY =
-									prop.skew.y * (1 - t2) +
-									midSkewY *
-										arc *
-										(1 - Math.abs(2 * t2 - 1)) +
-									prop.skew.y * t2
-							}
+							const { skewX, skewY } = skewRecalculation({
+								progress: cardTimeline.progress(),
+								cardsInfo: {
+									currentIndex: index,
+									totalCount: this.numberCards,
+								},
+								startSkew,
+								finalSkew: prop.skew,
+							})
 							card.skew.set(skewX, skewY)
 						}
 					},
 				},
-				0,
+				noDelayOnStart,
 			)
 			.fromTo(
 				card,
 				{ rotation: card.rotation },
 				{
 					rotation: prop.rotation,
-					duration: duration,
+					duration,
 				},
-				0,
+				noDelayOnStart,
 			)
 		this.cardTimeLines.add(cardTimeline)
 		this.animationTimeline ??= new gsap.core.Timeline({ paused: true })

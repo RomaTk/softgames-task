@@ -112,7 +112,7 @@ export class Game {
 
 	public display(): void {
 		this.menu.display(false)
-		// this.launchAceOfShadowsTask()
+		this.launchAceOfShadowsTask()
 		// this.launchMagicWordsTask().catch((err: unknown) => {
 		// 	console.error('Failed to launch Magic Words task', err)
 		// })
