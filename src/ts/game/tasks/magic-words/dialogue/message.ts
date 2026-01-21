@@ -102,9 +102,9 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 
 	protected textLayoutFix(): void {
 		// POSSIBLE_BUG layout update specific issue (need to investigate more) related to wordWrap
-		const delayBiggerThenThroattle = 0.5
+		const delayBiggerThanThrottle = 0.5
 		this.resizeDelayedCall ??= gsap.delayedCall(
-			delayBiggerThenThroattle,
+			delayBiggerThanThrottle,
 			(): void => {
 				this.destroyResizeDelayedCall()
 				const paddinngMargin = 30,
