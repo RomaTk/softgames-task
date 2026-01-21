@@ -1,9 +1,8 @@
-/* eslint-disable max-statements */
-/* eslint-disable one-var */
-/* eslint-disable sort-keys */
-/* eslint-disable max-lines-per-function */
-import { type Application, Container, Sprite, Texture } from 'pixi.js'
-import { Deck } from './deck.js'
+// No need to separate class, it is not big enough
+/* eslint-disable max-lines */
+
+import { type Application, Container, Sprite, type Texture } from 'pixi.js'
+import { Deck, type TPropertiesForTopCard } from './deck.js'
 import { createCardBack } from './create-skin.js'
 import { gsap } from 'gsap'
 import { skewRecalculation } from './skew-recalculation/index.js'
@@ -23,21 +22,24 @@ export class AceOfShadowsTask<App extends Application> {
 		readonly width: number
 		readonly height: number
 	}
+	// In seconds
+	protected readonly forOneCardAnimationDuration: number
+	protected readonly delayBetweenCardsAnimationDuration: number
 
+	// Here many assignments in constructor, but it is ok
+	// eslint-disable-next-line max-statements
 	public constructor(application: App) {
 		this.viewObject = new Container()
 		this.flyingCardsContainer = new Container()
-		this.numberCards = 10
+		this.numberCards = 144
+		this.forOneCardAnimationDuration = 2
+		this.delayBetweenCardsAnimationDuration = 1
 
-		const skew = {
-			x: Math.random() * 0.05,
-			y: Math.random() * 0.05,
-		}
-		const viewObjectMaxSize = {
-			width: 1500,
+		this.viewObjectMaxSize = {
 			height: 900,
+			width: 1500,
 		}
-		this.viewObjectMaxSize = viewObjectMaxSize
+		const skew = AceOfShadowsTask.getSkew()
 		this.decks = {
 			from: new Deck(skew),
 			to: new Deck(skew),
@@ -45,6 +47,14 @@ export class AceOfShadowsTask<App extends Application> {
 		this.cardTimeLines = new Set<gsap.core.Timeline>()
 		this.cardTexture = createCardBack(application)
 		this.createCards()
+	}
+
+	protected static getSkew(): { readonly x: number; readonly y: number } {
+		const factor = 0.05
+		return {
+			[`x`]: Math.random() * factor,
+			[`y`]: Math.random() * factor,
+		}
 	}
 
 	public createCards(): void {
@@ -56,28 +66,28 @@ export class AceOfShadowsTask<App extends Application> {
 	}
 
 	public resize(width: number, height: number): void {
-		this.viewObject.position.set(width / 2, height / 2)
+		const halfFactor = 0.5
+		this.viewObject.position.set(width * halfFactor, height * halfFactor)
 
 		let realSizes = {
-			width,
 			height,
+			width,
 		}
 
 		if (width < height) {
-			this.viewObject.rotation = Math.PI / 2
+			this.viewObject.angle = 90
 			realSizes = {
-				width: realSizes.height,
 				height: realSizes.width,
+				width: realSizes.height,
 			}
 		} else {
-			this.viewObject.rotation = 0
+			this.viewObject.angle = 0
 		}
 
 		this.viewObject.scale.set(
 			Math.min(
 				realSizes.width / this.viewObjectMaxSize.width,
 				realSizes.height / this.viewObjectMaxSize.height,
-				1,
 			),
 		)
 	}
@@ -85,10 +95,11 @@ export class AceOfShadowsTask<App extends Application> {
 	public display(): void {
 		this.viewObject.addChild(this.decks.from)
 		this.viewObject.addChild(this.decks.to)
-		this.decks.from.x = -400
-		this.decks.to.x = 400
-		const oneCardIncrement = 1,
-			beginning = 0
+
+		this.updateDecksPositions()
+
+		const oneCardIncrement = 1
+
 		for (
 			let index = 0;
 			index < this.numberCards;
@@ -97,23 +108,8 @@ export class AceOfShadowsTask<App extends Application> {
 			this.addOneCardToAnimation(index)
 		}
 		this.viewObject.addChild(this.flyingCardsContainer)
-		this.animationTimeline?.eventCallback('onComplete', () => {
-			this.decks = {
-				from: this.decks.to,
-				to: this.decks.from,
-			}
-			this.animationTimeline
-				?.play(beginning)
-				.reverse(this.animationTimeline.duration())
-		})
-		this.animationTimeline?.eventCallback('onReverseComplete', () => {
-			this.decks = {
-				from: this.decks.to,
-				to: this.decks.from,
-			}
-			this.animationTimeline?.play(beginning)
-		})
-		this.animationTimeline?.play(beginning)
+
+		this.displayAnimation()
 	}
 
 	public destroy(): void {
@@ -129,129 +125,215 @@ export class AceOfShadowsTask<App extends Application> {
 		this.cardTexture.destroy(true)
 	}
 
-	protected async playAnimation(): Promise<void> {
-		const beginning = 0
-		this.animationTimeline?.reversed(false)
-		await this.animationTimeline?.play(beginning)
-		this.decks = {
-			from: this.decks.to,
-			to: this.decks.from,
-		}
-		await this.animationTimeline
-			?.play(beginning)
-			.reverse(this.animationTimeline.duration())
-		this.decks = {
-			from: this.decks.to,
-			to: this.decks.from,
-		}
+	protected displayAnimation(): void {
+		const startTime = 0
+		this.animationTimeline?.eventCallback('onComplete', () => {
+			this.decks = {
+				from: this.decks.to,
+				to: this.decks.from,
+			}
+			this.animationTimeline
+				?.play(startTime)
+				.reverse(this.animationTimeline.duration())
+		})
+		this.animationTimeline?.eventCallback('onReverseComplete', () => {
+			this.decks = {
+				from: this.decks.to,
+				to: this.decks.from,
+			}
+			this.animationTimeline?.play(startTime)
+		})
+		this.animationTimeline?.play(startTime)
+	}
+
+	protected updateDecksPositions(): void {
+		const center = 0,
+			spreadFromCenter = 400
+
+		this.decks.from.position.set(-spreadFromCenter, center)
+		this.decks.to.position.set(spreadFromCenter, center)
 	}
 
 	protected addOneCardToAnimation(index: number): void {
-		const card = this.decks.from.getCardByIndex(index)
-		const startPosition = {
-			x: card.x + this.decks.from.x,
-			y: card.y + this.decks.from.y,
+		const cardTimeline = ((card: Sprite): gsap.core.Timeline =>
+			this.generateCardTimeline({
+				card,
+				finalVisualData: ((): TPropertiesForTopCard => {
+					const finalVisualData = {
+						...this.decks.to.getPropertiesForTopCard(card, index),
+					}
+					finalVisualData.position = {
+						[`x`]: finalVisualData.position.x + this.decks.to.x,
+						[`y`]: finalVisualData.position.y + this.decks.to.y,
+					}
+					return finalVisualData
+				})(),
+				index,
+				startPosition: {
+					[`x`]: card.x + this.decks.from.x,
+					[`y`]: card.y + this.decks.from.y,
+				},
+			}))(this.decks.from.getCardByIndex(index))
+
+		this.cardTimeLines.add(cardTimeline)
+		this.animationTimeline ??= new gsap.core.Timeline({ paused: true })
+		this.animationTimeline.add(
+			cardTimeline,
+			index * this.delayBetweenCardsAnimationDuration,
+		)
+	}
+
+	protected generateCardTimeline(prop: {
+		readonly index: number
+		readonly startPosition: { readonly x: number; readonly y: number }
+		readonly card: Sprite
+		readonly finalVisualData: {
+			readonly position: { readonly x: number; readonly y: number }
+			readonly skew: { readonly x: number; readonly y: number }
+			readonly rotation: number
 		}
-		const startSkew = {
-			x: card.skew.x,
-			y: card.skew.y,
-		}
-		const prop = this.decks.to.getPropertiesForTopCard(card, index)
-		prop.position.x += this.decks.to.x
-		prop.position.y += this.decks.to.y
-		const position = {
-			...startPosition,
-		}
-		const duration = 2,
-			noDelayOnStart = 0
-		const cardTimeline = gsap
-			.timeline()
+	}): gsap.core.Timeline {
+		return this.addVisualFromToTimeline(
+			this.addLogicalCallsToTimeline(gsap.timeline(), {
+				card: prop.card,
+				duration: this.forOneCardAnimationDuration,
+				finalPosition: prop.finalVisualData.position,
+				startPosition: prop.startPosition,
+			}),
+			{
+				card: prop.card,
+				duration: this.forOneCardAnimationDuration,
+				finalPosition: prop.finalVisualData.position,
+				finalRotation: prop.finalVisualData.rotation,
+				finalSkew: prop.finalVisualData.skew,
+				index: prop.index,
+				startPosition: prop.startPosition,
+			},
+		)
+	}
+
+	protected addLogicalCallsToTimeline<TimeLine extends gsap.core.Timeline>(
+		timeline: TimeLine,
+		props: {
+			readonly startPosition: { readonly x: number; readonly y: number }
+			readonly card: Sprite
+			readonly duration: number
+			readonly finalPosition: { readonly x: number; readonly y: number }
+		},
+	): TimeLine {
+		const noDelayOnStart = 0
+		return timeline
 			.add(() => {
 				const globalTimeLine = this.animationTimeline
 				if (!globalTimeLine) {
 					throw new Error('No animation tween')
 				}
 				if (!globalTimeLine.reversed()) {
-					const deAttachedCard = this.decks.from.getTopCard()
-					this.flyingCardsContainer.addChildAt(deAttachedCard, 0)
-					// To make sure to change position in the same render frame
-					deAttachedCard.position.set(
-						startPosition.x,
-						startPosition.y,
+					const asFirstChild = 0,
+						deAttachedCard = this.decks.from.getTopCard()
+
+					this.flyingCardsContainer.addChildAt(
+						deAttachedCard,
+						asFirstChild,
 					)
+					// To make sure to change position in the same render frame
+					deAttachedCard.position = { ...props.startPosition }
 					return
 				}
-				this.decks.to.addCard(card, false)
+				this.decks.to.addCard(props.card, false)
 			}, noDelayOnStart)
 			.add(() => {
-				const globalTimeLine = this.animationTimeline
+				const asFirstChild = 0,
+					globalTimeLine = this.animationTimeline
+
 				if (!globalTimeLine) {
 					throw new Error('No animation tween')
 				}
 				if (!globalTimeLine.reversed()) {
-					this.decks.to.addCard(card, false)
+					this.decks.to.addCard(props.card, false)
 					return
 				}
-				const deAttachedCard = this.decks.from.getTopCard()
-				this.flyingCardsContainer.addChildAt(deAttachedCard, 0)
-				// To make sure to change position in the same render frame
-				deAttachedCard.position.set(prop.position.x, prop.position.y)
-			}, duration)
 
+				this.decks.from.getTopCard()
+				this.flyingCardsContainer.addChildAt(props.card, asFirstChild)
+				// To make sure to change position in the same render frame
+				props.card.position = {
+					...props.finalPosition,
+				}
+			}, props.duration)
+	}
+
+	// If this function is bigger then others - it is okay, we setting here properties, often - separately
+	// eslint-disable-next-line max-lines-per-function
+	protected addVisualFromToTimeline<TimeLine extends gsap.core.Timeline>(
+		timeline: TimeLine,
+		props: {
+			readonly startPosition: { readonly x: number; readonly y: number }
+			readonly finalPosition: { readonly x: number; readonly y: number }
+			readonly finalSkew: { readonly x: number; readonly y: number }
+			readonly finalRotation: number
+			readonly duration: number
+			readonly card: Sprite
+			readonly index: number
+		},
+	): TimeLine {
+		const noDelayOnStart = 0,
+			position = {
+				...props.startPosition,
+			},
+			startSkew = {
+				[`x`]: props.card.skew.x,
+				[`y`]: props.card.skew.y,
+			}
+		return timeline
 			.fromTo(
 				position,
 				{
-					x: startPosition.x,
-					y: startPosition.y,
+					...props.startPosition,
 				},
 				{
-					x: prop.position.x,
-					y: prop.position.y,
-					duration,
+					...props.finalPosition,
+					duration: props.duration,
+					ease: 'power2.inOut',
 					onUpdate: () => {
-						if (card.parent === this.flyingCardsContainer) {
-							card.position.set(position.x, position.y)
+						if (props.card.parent === this.flyingCardsContainer) {
+							props.card.position.set(position.x, position.y)
 						}
 					},
-					ease: 'power2.inOut',
 				},
 				noDelayOnStart,
 			)
 			.fromTo(
-				card.skew,
-				{ x: card.skew.x, y: card.skew.y },
+				props.card.skew,
+				{ [`x`]: props.card.skew.x, [`y`]: props.card.skew.y },
 				{
-					x: prop.skew.x,
-					y: prop.skew.y,
-					duration,
+					...props.finalSkew,
+					duration: props.duration,
 					onUpdate: () => {
-						if (card.parent === this.flyingCardsContainer) {
+						if (props.card.parent === this.flyingCardsContainer) {
 							const { skewX, skewY } = skewRecalculation({
-								progress: cardTimeline.progress(),
 								cardsInfo: {
-									currentIndex: index,
+									currentIndex: props.index,
 									totalCount: this.numberCards,
 								},
+								finalSkew: props.finalSkew,
+								progress: timeline.progress(),
 								startSkew,
-								finalSkew: prop.skew,
 							})
-							card.skew.set(skewX, skewY)
+							props.card.skew.set(skewX, skewY)
 						}
 					},
 				},
 				noDelayOnStart,
 			)
 			.fromTo(
-				card,
-				{ rotation: card.rotation },
+				props.card,
+				{ rotation: props.card.rotation },
 				{
-					rotation: prop.rotation,
-					duration,
+					duration: props.duration,
+					rotation: props.finalRotation,
 				},
 				noDelayOnStart,
 			)
-		this.cardTimeLines.add(cardTimeline)
-		this.animationTimeline ??= new gsap.core.Timeline({ paused: true })
-		this.animationTimeline.add(cardTimeline, index)
 	}
 }

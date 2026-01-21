@@ -9,12 +9,9 @@ export type TPropertiesForTopCard = {
 export class Deck extends Container {
 	protected readonly cardsSkew: { x: number; y: number }
 
-	public constructor(cardsSkew?: { readonly x: number; readonly y: number }) {
+	public constructor(cardsSkew: { readonly x: number; readonly y: number }) {
 		super()
-		this.cardsSkew = cardsSkew ?? {
-			x: (Math.random() - 0.5) * 0.5,
-			y: (Math.random() - 0.5) * 0.5,
-		}
+		this.cardsSkew = cardsSkew
 	}
 
 	public get countCards(): number {
@@ -23,11 +20,13 @@ export class Deck extends Container {
 
 	public addCard(card: Sprite, initial: boolean): void {
 		if (initial) {
-			const properties = this.getPropertiesForTopCard(card, 0)
+			const properties = ((): TPropertiesForTopCard => {
+				const noCardsInFly = 0
+				return this.getPropertiesForTopCard(card, noCardsInFly)
+			})()
 			card.position.set(properties.position.x, properties.position.y)
 			card.rotation = properties.rotation
-			card.skew.y = properties.skew.y
-			card.skew.x = properties.skew.x
+			card.skew.set(properties.skew.x, properties.skew.y)
 		} else {
 			card.position.set(
 				card.x - this.position.x,
@@ -68,16 +67,22 @@ export class Deck extends Container {
 		card: Sprite,
 		cardsInFly: number,
 	): TPropertiesForTopCard {
+		const byPositionFactor = 0.005,
+			byRotationFactor = 0.02,
+			halfOfRandomRange = 0.5
 		return {
 			position: {
-				y:
+				[`x`]:
+					-(this.countCards + cardsInFly) *
+					card.texture.width *
+					byPositionFactor,
+				[`y`]:
 					-(this.countCards + cardsInFly) *
 					card.texture.height *
-					0.005,
-				x: -(this.countCards + cardsInFly) * card.texture.width * 0.005,
+					byPositionFactor,
 			},
-			skew: { y: this.cardsSkew.y, x: this.cardsSkew.x },
-			rotation: (Math.random() - 0.5) * 0.02,
+			rotation: (Math.random() - halfOfRandomRange) * byRotationFactor,
+			skew: { ...this.cardsSkew },
 		}
 	}
 }
