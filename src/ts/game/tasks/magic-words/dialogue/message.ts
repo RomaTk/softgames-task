@@ -1,19 +1,11 @@
-/* eslint-disable max-statements */
+import { Graphics, Texture } from 'pixi.js'
 import {
 	LayoutContainer,
 	LayoutHTMLText,
 	LayoutSprite,
 	LayoutText,
 } from '@pixi/layout/components'
-import { text } from 'node:stream/consumers'
-import {
-	EventEmitter,
-	Graphics,
-	HTMLText,
-	Texture,
-	HTMLTextStyle,
-	Ticker,
-} from 'pixi.js'
+import type { Data as DataFromEndpoint } from '../data.js'
 import gsap from 'gsap'
 
 export type TMessageOptions = {
@@ -25,8 +17,15 @@ export type TMessageOptions = {
 	readonly position: 'left' | 'right'
 }
 
-export class Message {
+export type SizeGetter = {
+	readonly width: number
+	readonly height: number
+	readonly destroy: (all: boolean) => void
+}
+
+export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 	public readonly viewObject: LayoutContainer
+	protected resizeDelayedCall?: gsap.core.Tween
 	protected readonly options: TMessageOptions
 	protected readonly authorName: LayoutText
 	protected readonly messageContainer: LayoutContainer
@@ -34,26 +33,45 @@ export class Message {
 	protected readonly authorAvatar: LayoutSprite
 	// HACK to cover the sharp corner of the message container
 	protected readonly cornerRect: Graphics
+	protected readonly htmlTextWithEmojies: string
+	protected readonly data: Data
+	protected readonly sizeGetters: {
+		readonly message: SizeGetter
+		readonly authorName: SizeGetter
+	}
 
-	public constructor(options: TMessageOptions) {
+	// Ok for constructor
+	// eslint-disable-next-line max-statements
+	public constructor(options: TMessageOptions, data: Data) {
 		this.options = options
+		this.data = data
 
+		this.htmlTextWithEmojies = this.generateTextWithEmojies(
+			this.options.text,
+		)
 		this.viewObject = this.generateViewObject()
 		this.cornerRect = this.generateCornerRect()
 		this.authorName = this.generateAuthorName()
 		this.authorAvatar = this.generateAvatar()
 		this.messageText = this.generateMessageText(true)
 		this.messageContainer = this.generateMessageContainer()
+		this.sizeGetters = {
+			authorName: this.generateAuthorName(),
+			message: this.generateMessageText(false),
+		}
 
 		this.display()
 	}
 
 	// It is public but for this class no sense to be used outside
 	public display(): void {
-		this.messageContainer.addChild(this.messageText)
+		this.messageContainer.addChild(this.authorName, this.messageText)
 		this.viewObject.addChild(this.authorAvatar)
 		this.viewObject.addChild(this.messageContainer)
-
+		this.authorName.layout = {
+			height: this.authorName.height,
+			maxWidth: this.authorName.width,
+		}
 		this.textLayoutFix()
 	}
 
@@ -68,46 +86,65 @@ export class Message {
 		this.messageText.destroy(true)
 		this.messageContainer.destroy(true)
 		this.viewObject.destroy(true)
+		this.destroySizeGetters()
+		this.destroyResizeDelayedCall()
+	}
+
+	protected destroySizeGetters(): void {
+		this.sizeGetters.authorName.destroy(true)
+		this.sizeGetters.message.destroy(true)
+	}
+
+	protected destroyResizeDelayedCall(): void {
+		this.resizeDelayedCall?.kill()
+		delete this.resizeDelayedCall
 	}
 
 	protected textLayoutFix(): void {
-		// POSSIBLE_BUG layout update specific issue (need to investigate more)
-		gsap.delayedCall(0.5, (): void => {
-			const findOutMinSizeMessageText = this.generateMessageText(false)
-
-			// Full size
-			if (
-				findOutMinSizeMessageText.width + 30 <
-				this.messageContainer.width
-			) {
-				this.messageText.layout = {
-					width: findOutMinSizeMessageText.width,
-					maxWidth: '100%',
-					height: findOutMinSizeMessageText.height + 40,
+		// POSSIBLE_BUG layout update specific issue (need to investigate more) related to wordWrap
+		const delayBiggerThenThroattle = 0.5
+		this.resizeDelayedCall ??= gsap.delayedCall(
+			delayBiggerThenThroattle,
+			(): void => {
+				this.destroyResizeDelayedCall()
+				const paddinngMargin = 30,
+					saveHeight = 20
+				// Full size
+				if (
+					this.sizeGetters.message.width + paddinngMargin <
+					this.messageContainer.width
+				) {
+					this.messageText.layout = {
+						height:
+							this.sizeGetters.message.height +
+							saveHeight +
+							this.sizeGetters.authorName.height,
+						maxWidth: '100%',
+						width: this.sizeGetters.message.width + paddinngMargin,
+					}
+				} else {
+					this.messageText.layout = {
+						height:
+							((this.sizeGetters.message.width + paddinngMargin) /
+								this.messageContainer.width) *
+								this.sizeGetters.message.height +
+							saveHeight +
+							this.sizeGetters.authorName.height,
+						width: '100%',
+					}
 				}
-			} else {
-				this.messageText.layout = {
-					width: '100%',
-					height:
-						((findOutMinSizeMessageText.width + 30) /
-							this.messageContainer.width) *
-							findOutMinSizeMessageText.height +
-						20,
-				}
-			}
-
-			findOutMinSizeMessageText.destroy(true)
-		})
+			},
+		)
 	}
 
 	protected generateMessageText(isWordWrap: boolean): LayoutHTMLText {
 		const messageText = new LayoutHTMLText({
 			style: {
 				fill: 0xff1010,
-				wordWrap: isWordWrap,
 				fontSize: 20,
+				wordWrap: isWordWrap,
 			},
-			text: this.options.text,
+			text: this.htmlTextWithEmojies,
 		})
 
 		return messageText
@@ -115,16 +152,19 @@ export class Message {
 
 	protected generateAvatar(): LayoutSprite {
 		const avatar = new LayoutSprite({
-			texture: this.options.author.avatarUrl
-				? Texture.from(this.options.author.avatarUrl)
-				: Texture.WHITE,
+			texture: ((): Texture => {
+				if (this.options.author.avatarUrl) {
+					return Texture.from(this.options.author.avatarUrl)
+				}
+				return Texture.WHITE
+			})(),
 		})
 		avatar.layout = {
-			width: 100,
-			maxHeight: '50%',
-			aspectRatio: 1,
-			objectFit: 'cover',
 			alignSelf: 'flex-end',
+			aspectRatio: 1,
+			maxHeight: '50%',
+			objectFit: 'cover',
+			width: 100,
 		}
 		return avatar
 	}
@@ -133,31 +173,32 @@ export class Message {
 		const authorName = new LayoutText({
 			style: {
 				fill: 0xff1010,
-				fontSize: '20%',
+				fontSize: 30,
 			},
 			text: this.options.author.name,
 		})
-		authorName.layout = {
-			maxWidth: '100%',
-			width: 'intrinsic',
-			height: 'intrinsic',
-		}
 		return authorName
 	}
 
 	protected generateViewObject(): LayoutContainer {
 		return new LayoutContainer({
 			layout: {
-				flexShrink: 0,
+				alignSelf: ((): 'flex-start' | 'flex-end' => {
+					if (this.options.position === 'left') {
+						return 'flex-start'
+					}
+					return 'flex-end'
+				})(),
 				display: 'flex',
-				flexDirection:
-					this.options.position === 'left' ? 'row' : 'row-reverse',
-				alignSelf:
-					this.options.position === 'left'
-						? 'flex-start'
-						: 'flex-end',
-				width: '75%',
+				flexDirection: ((): 'row' | 'row-reverse' => {
+					if (this.options.position === 'left') {
+						return 'row'
+					}
+					return 'row-reverse'
+				})(),
+				flexShrink: 0,
 				marginTop: 10,
+				width: '75%',
 			},
 		})
 	}
@@ -167,14 +208,14 @@ export class Message {
 			layout: {
 				alignItems: 'flex-start',
 				backgroundColor: 0x3495eb,
+				borderRadius: 10,
 				display: 'flex',
 				flexDirection: 'column',
+				gap: 5,
 				marginBottom: 10,
-				borderRadius: 10,
 				maxWidth: '100%',
 				objectFit: 'fill',
 				padding: 10,
-				gap: 5,
 			},
 		})
 
@@ -185,7 +226,11 @@ export class Message {
 
 	protected generateCornerRect(): Graphics {
 		const cornerRect = new Graphics()
+			// No sense to create variables for them
+			// eslint-disable-next-line @typescript-eslint/no-magic-numbers
 			.roundRect(0, 0, 20, 20, 0)
+			// No sense to create variables for them
+			// eslint-disable-next-line @typescript-eslint/no-magic-numbers
 			.fill(0x3495eb)
 		cornerRect.layout = {
 			position: 'absolute',
@@ -201,5 +246,24 @@ export class Message {
 			width: '50%',
 		}
 		return cornerRect
+	}
+
+	protected generateTextWithEmojies(text: string): string {
+		const regex = /\{(?<emojie>[^}]+)\}/gu
+		let changedText = text
+		text.matchAll(regex).forEach(
+			(match: {
+				readonly groups?: { readonly emojie?: string }
+			}): void => {
+				const emojie = match.groups?.emojie
+				if (typeof emojie !== 'undefined') {
+					changedText = text.replaceAll(
+						`{${emojie}}`,
+						`<img src="${this.data.emojies.find((element: { readonly name: string }) => element.name === emojie)?.base64 ?? ''}" width="24" height="24" style="vertical-align: middle" />`,
+					)
+				}
+			},
+		)
+		return changedText
 	}
 }

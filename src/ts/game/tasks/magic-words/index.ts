@@ -15,12 +15,38 @@ export class MagicWordsTask {
 	}
 	protected readonly endpoint: string
 	protected readonly data: Data
+	// So can be changed in subclasses
+	protected readonly static: typeof MagicWordsTask
 
 	public constructor() {
+		this.static = MagicWordsTask
 		this.endpoint =
 			'https://private-624120-softgamesassignment.apiary-mock.com/v2/magicwords'
 		this.viewObject = new Container()
 		this.data = new Data()
+	}
+
+	protected static async urlToBase64(url: string): Promise<string> {
+		const blob = await (await fetch(url)).blob()
+
+		// Use FileReader to read the blob
+		return new Promise<string>((resolve, reject) => {
+			const reader = new FileReader()
+			reader.onloadend = (): void => {
+				const { result } = reader
+				if (result === null) {
+					reject(new Error('Failed to convert blob to base64'))
+					return
+				} else if (typeof result !== 'string') {
+					const textDecoder = new TextDecoder()
+					resolve(textDecoder.decode(result))
+					return
+				}
+				resolve(result)
+			}
+			reader.onerror = reject
+			reader.readAsDataURL(blob)
+		})
 	}
 
 	public async load(): Promise<void> {
@@ -102,20 +128,24 @@ export class MagicWordsTask {
 			}
 			let loadedCount = 0
 
-			this.data.emojies.forEach((emoji: { readonly url: string }) => {
-				// Load by image as will be using html text (no sense in performance like bitmaps here)
-				const img = new Image()
-				img.onload = (): void => {
-					loadedCount += countIncrement
-					if (loadedCount >= allCount) {
-						resolve()
-					}
-				}
-				img.onerror = (): void => {
-					reject(new Error(`Failed to load emoji ${emoji.url}`))
-				}
-				img.src = emoji.url
-			})
+			this.data.emojies.forEach(
+				(emoji: { readonly url: string; readonly name: string }) => {
+					this.static
+						.urlToBase64(emoji.url)
+						.then((result: string): void => {
+							this.data.addBase64ToEmojie(emoji.name, result)
+							loadedCount += countIncrement
+							if (loadedCount >= allCount) {
+								resolve()
+							}
+						})
+						.catch((): void => {
+							reject(
+								new Error(`Failed to load emoji ${emoji.url}`),
+							)
+						})
+				},
+			)
 		})
 	}
 

@@ -24,12 +24,6 @@ export class Dialogue<Data extends DataFromEndpoint> {
 				disableEasing: false,
 				maxSpeed: 400,
 				yEase: this.scrollSpring,
-				// TODO remove
-				xEase: new ScrollSpring({
-					damp: 0.7,
-					max: 200,
-					springiness: 0.15,
-				}),
 			},
 		})
 		this.data = data
@@ -107,21 +101,24 @@ export class Dialogue<Data extends DataFromEndpoint> {
 			}
 		}
 
-		return new Message({
-			author: {
-				avatarUrl: avatar?.url ?? '',
-				name: messageData.name,
+		return new Message(
+			{
+				author: {
+					avatarUrl: avatar?.url ?? '',
+					name: messageData.name,
+				},
+				position:
+					avatar?.position ??
+					((): 'left' | 'right' => {
+						const equalChance = 0.5
+						if (Math.random() < equalChance) {
+							return 'left'
+						}
+						return 'right'
+					})(),
+				text: messageData.text,
 			},
-			position:
-				avatar?.position ??
-				((): 'left' | 'right' => {
-					const equalChance = 0.5
-					if (Math.random() < equalChance) {
-						return 'left'
-					}
-					return 'right'
-				})(),
-			text: messageData.text,
-		})
+			this.data,
+		)
 	}
 }

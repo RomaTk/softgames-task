@@ -17,7 +17,13 @@ export class Data {
 				text: z.string(),
 			}),
 		),
-		emojies: z.array(z.object({ name: z.string(), url: z.string() })),
+		emojies: z.array(
+			z.object({
+				base64: z.optional(z.string()),
+				name: z.string(),
+				url: z.string(),
+			}),
+		),
 	})
 	// So can be changed in subclasses
 	protected static: typeof Data
@@ -67,5 +73,18 @@ export class Data {
 
 	public parse(data: unknown): void {
 		this.parsedData = this.static.parseData(data)
+	}
+
+	public addBase64ToEmojie(name: string, base64Data: string): void {
+		if (!this.parsedData) {
+			throw new Error('Data not parsed yet')
+		}
+		const emojie = this.parsedData.emojies.find(
+			(em: { readonly name: string }) => em.name === name,
+		)
+		if (!emojie) {
+			throw new Error(`Emojie with name ${name} not found`)
+		}
+		emojie.base64 = base64Data
 	}
 }
