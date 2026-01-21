@@ -1,8 +1,14 @@
 import '@pixi/layout'
+import * as Pixi from 'pixi.js'
 import { Application } from 'pixi.js'
 import { MagicWordsTask } from './tasks/magic-words/index.js'
 import { Menu } from './menu/index.js'
 import { OnTickResizeObserver } from './resize-observer.js'
+import { AceOfShadowsTask } from './tasks/ace-of-shadows/index.js'
+import { PixiPlugin } from 'gsap/PixiPlugin'
+import { gsap } from 'gsap'
+gsap.registerPlugin(PixiPlugin)
+PixiPlugin.registerPIXI(Pixi)
 
 export type TLoadStatus =
 	| {
@@ -20,7 +26,9 @@ export class Game {
 	protected readonly resizeObserver: OnTickResizeObserver
 	// Max size in pixels for width or height
 	protected readonly maxPixelsSize: number
-	protected readonly tasks: Set<MagicWordsTask>
+	protected readonly tasks: Set<
+		MagicWordsTask | AceOfShadowsTask<Application>
+	>
 
 	public constructor() {
 		this.application = new Application()
@@ -100,9 +108,10 @@ export class Game {
 
 	public display(): void {
 		this.menu.display(false)
-		this.launchMagicWordsTask().catch((err: unknown) => {
-			console.error('Failed to launch Magic Words task', err)
-		})
+		this.launchAceOfShadowsTask()
+		// this.launchMagicWordsTask().catch((err: unknown) => {
+		// 	console.error('Failed to launch Magic Words task', err)
+		// })
 		this.application.stage.addChild(this.menu.viewObject)
 		this.resizeObserver.observe(document.body)
 	}
@@ -132,5 +141,13 @@ export class Game {
 		const toAwait = task.display()
 		this.application.stage.addChild(task.viewObject)
 		await toAwait
+	}
+
+	protected launchAceOfShadowsTask(): void {
+		const task = new AceOfShadowsTask(this.application)
+		this.tasks.add(task)
+		task.resize(document.body.clientWidth, document.body.clientHeight)
+		task.display()
+		this.application.stage.addChild(task.viewObject)
 	}
 }
