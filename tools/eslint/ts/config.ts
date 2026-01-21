@@ -89,8 +89,13 @@ const config: TEslintConfig[] = [
 						},
 						{
 							from: 'package',
-							name: ['Ticker'],
+							name: ['Ticker', 'Container'],
 							package: 'pixi.js',
+						},
+						{
+							from: 'package',
+							name: ['LayoutContainer'],
+							package: '@pixi/layout',
 						},
 					],
 				},

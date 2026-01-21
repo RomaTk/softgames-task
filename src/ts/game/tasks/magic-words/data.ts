@@ -5,7 +5,9 @@ export class Data {
 		avatars: z.array(
 			z.object({
 				name: z.string(),
-				position: z.string(),
+				position: z
+					.string()
+					.refine((val) => val === 'left' || val === 'right'),
 				url: z.string(),
 			}),
 		),
@@ -15,9 +17,15 @@ export class Data {
 				text: z.string(),
 			}),
 		),
-		emojies: z.array(z.object({ name: z.string(), url: z.string() })),
+		emojies: z.array(
+			z.object({
+				base64: z.optional(z.string()),
+				name: z.string(),
+				url: z.string(),
+			}),
+		),
 	})
-	// So can be changed in subclasses
+	// Allows subclasses to override the static reference for customized parsing behavior
 	protected static: typeof Data
 	protected parsedData?: z.infer<(typeof Data)['dataSchema']>
 
@@ -32,6 +40,15 @@ export class Data {
 			throw new Error('Data not parsed yet')
 		}
 		return this.parsedData.emojies
+	}
+
+	public get dialogue(): readonly z.infer<
+		(typeof Data)['dataSchema']
+	>['dialogue'][number][] {
+		if (!this.parsedData) {
+			throw new Error('Data not parsed yet')
+		}
+		return this.parsedData.dialogue
 	}
 
 	public get avatars(): readonly z.infer<
@@ -56,5 +73,18 @@ export class Data {
 
 	public parse(data: unknown): void {
 		this.parsedData = this.static.parseData(data)
+	}
+
+	public addBase64ToEmojie(name: string, base64Data: string): void {
+		if (!this.parsedData) {
+			throw new Error('Data not parsed yet')
+		}
+		const emoji = this.parsedData.emojies.find(
+			(em: { readonly name: string }) => em.name === name,
+		)
+		if (!emoji) {
+			throw new Error(`Emoji with name ${name} not found`)
+		}
+		emoji.base64 = base64Data
 	}
 }

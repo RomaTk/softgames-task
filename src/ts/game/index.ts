@@ -1,8 +1,8 @@
 import '@pixi/layout'
 import { Application } from 'pixi.js'
+import { MagicWordsTask } from './tasks/magic-words/index.js'
 import { Menu } from './menu/index.js'
 import { OnTickResizeObserver } from './resize-observer.js'
-import { MagicWordsTask } from './tasks/magic-words/index.js'
 
 export type TLoadStatus =
 	| {
@@ -128,6 +128,7 @@ export class Game {
 	protected async launchMagicWordsTask(): Promise<void> {
 		const task = new MagicWordsTask()
 		this.tasks.add(task)
+		task.resize(document.body.clientWidth, document.body.clientHeight)
 		const toAwait = task.display()
 		this.application.stage.addChild(task.viewObject)
 		await toAwait
