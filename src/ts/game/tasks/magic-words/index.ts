@@ -8,7 +8,7 @@ export class MagicWordsTask {
 	protected loadPromise?: Promise<void>
 	protected loadForTask?: LoadForTask
 	protected dialogue?: Dialogue<Data>
-	// We save this data, as objects created dynamically and as soon as created - we need to set the value
+	// We save this data because objects are created dynamically and need the value set immediately
 	protected lastResizeData?: {
 		readonly width: number
 		readonly height: number
