@@ -257,7 +257,7 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 			}): void => {
 				const emojie = match.groups?.emojie
 				if (typeof emojie !== 'undefined') {
-					changedText = text.replaceAll(
+					changedText = changedText.replaceAll(
 						`{${emojie}}`,
 						`<img src="${this.data.emojies.find((element: { readonly name: string }) => element.name === emojie)?.base64 ?? ''}" width="24" height="24" style="vertical-align: middle" />`,
 					)
