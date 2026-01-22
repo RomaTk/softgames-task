@@ -6,6 +6,7 @@ import {
 	LayoutText,
 } from '@pixi/layout/components'
 import type { Data as DataFromEndpoint } from '../data.js'
+import { ErrorCatcher } from '../../../error-catcher.js'
 import gsap from 'gsap'
 
 export type TMessageOptions = {
@@ -61,7 +62,7 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 		}
 
 		this.display().catch((err: unknown) => {
-			console.error('Failed to display message', err)
+			ErrorCatcher.instance.throw(err, false)
 		})
 	}
 
@@ -271,9 +272,14 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 									element.name === emojie,
 							)?.base64 ??
 							((): string => {
-								console.warn(
-									`Emoji with name "${emojie}" not found`,
-								)
+								try {
+									throw Error(
+										`Emoji with name "${emojie}" not found`,
+									)
+								} catch (err) {
+									ErrorCatcher.instance.throw(err, true)
+								}
+
 								return ''
 							})()
 						}" width="24" height="24" style="vertical-align: middle" />`,

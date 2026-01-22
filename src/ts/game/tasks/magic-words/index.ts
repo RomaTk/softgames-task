@@ -1,6 +1,7 @@
 import { Assets, Container } from 'pixi.js'
 import { Data } from './data.js'
 import { Dialogue } from './dialogue/index.js'
+import { ErrorCatcher } from '../../error-catcher.js'
 import { LoadForTask } from '../load.js'
 
 export class MagicWordsTask {
@@ -85,7 +86,7 @@ export class MagicWordsTask {
 		this.viewObject.destroy(true)
 		this.data.avatars.forEach((avatar: { readonly url: string }) => {
 			Assets.unload(avatar.url).catch((err: unknown) => {
-				console.error(err)
+				ErrorCatcher.instance.throw(err, false)
 			})
 		})
 	}

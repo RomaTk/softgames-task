@@ -1,5 +1,6 @@
 import { Container, Graphics } from 'pixi.js'
 import Emittery from 'emittery'
+import { ErrorCatcher } from '../error-catcher.js'
 
 export type TMenuOpenButtonEvents = {
 	buttonClicked: null
@@ -110,7 +111,7 @@ export class MenuOpenButton {
 		this.viewObject.cursor = 'pointer'
 		this.viewObject.addEventListener('pointertap', () => {
 			this.emitter.emit('buttonClicked', null).catch((err: unknown) => {
-				console.error(err)
+				ErrorCatcher.instance.throw(err, false)
 			})
 		})
 	}

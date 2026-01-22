@@ -2,6 +2,7 @@ import '@pixi/layout'
 import * as Pixi from 'pixi.js'
 import { Application, Container } from 'pixi.js'
 import { AceOfShadowsTask } from './tasks/ace-of-shadows/index.js'
+import { ErrorCatcher } from './error-catcher.js'
 import { MagicWordsTask } from './tasks/magic-words/index.js'
 import { Menu } from './menu/index.js'
 import { OnTickResizeObserver } from './resize-observer.js'
@@ -26,6 +27,7 @@ export type TTask = {
 }
 
 export class Game {
+	public readonly errorCatcher: ErrorCatcher
 	protected loadPromise?: Promise<TLoadStatus>
 	protected readonly application: Application
 	protected readonly menu: Menu
@@ -36,6 +38,16 @@ export class Game {
 	protected readonly tasksContainer: Pixi.Container
 
 	public constructor() {
+		this.errorCatcher = ErrorCatcher.instance
+		this.errorCatcher.actionOnError = (): void => {
+			const { parentElement } = this.application.canvas
+			this.destroy()
+			if (parentElement) {
+				parentElement.textContent =
+					'An error occurred. Please, reload the page.'
+				parentElement.removeChild(this.application.canvas)
+			}
+		}
 		this.application = new Application()
 		this.menu = new Menu({
 			tasks: [

@@ -1,5 +1,6 @@
 import { LayoutContainer, ScrollSpring } from '@pixi/layout/components'
 import type { Data as DataFromEndpoint } from '../data.js'
+import { ErrorCatcher } from '../../../error-catcher.js'
 import { Message } from './message.js'
 
 // Take into account that this class can be used only after initialization of application with layout plugin
@@ -108,7 +109,7 @@ export class Dialogue<Data extends DataFromEndpoint> {
 					`Avatar for name "${messageData.name}" not found`,
 				)
 			} catch (err) {
-				console.warn(err)
+				ErrorCatcher.instance.throw(err, true)
 			}
 		}
 
