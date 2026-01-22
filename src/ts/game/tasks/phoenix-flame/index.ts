@@ -30,7 +30,7 @@ export class PhoenixFlameTask<App extends Application> {
 		const increment = 1
 		for (let index = 0; index < this.maxParticles; index += increment) {
 			const particle = new LikeFireParticle(this.texture, () => {
-				if (Math.random() < 0.5) {
+				if (Math.random() < 0.7) {
 					particle.activate()
 				}
 			})
