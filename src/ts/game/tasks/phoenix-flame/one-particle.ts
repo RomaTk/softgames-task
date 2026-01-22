@@ -1,4 +1,4 @@
-// Here we have many styles, so mcgic numbers is okay for many places
+// Here we have many styles, so magic numbers is okay for many places
 /* eslint-disable @typescript-eslint/no-magic-numbers */
 import { Sprite, type Texture } from 'pixi.js'
 import { gsap } from 'gsap'
