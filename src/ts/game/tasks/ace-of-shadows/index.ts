@@ -299,7 +299,7 @@ export class AceOfShadowsTask<App extends Application> {
 						if (props.card.parent === this.flyingCardsContainer) {
 							props.card.position.set(position.x, position.y)
 
-							// POSSIBLE_BUG - I do not change final and start skew as they same in this example
+							// POSSIBLE_BUG - I do not change final and start skew as they are the same in this example
 							const { skewX, skewY } = skewRecalculation({
 								cardsInfo: {
 									currentIndex: ((): number => {
