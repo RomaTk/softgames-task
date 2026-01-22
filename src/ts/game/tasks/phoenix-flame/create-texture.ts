@@ -2,8 +2,8 @@ import { type Application, Container, Graphics, type Texture } from 'pixi.js'
 
 export const createFireTexture = (app: Application, size: number): Texture => {
 	const center = ((): number => {
-			const halpSIzeFactor = 2
-			return size / halpSIzeFactor
+			const halfSizeFactor = 2
+			return size / halfSizeFactor
 		})(),
 		graphicsToTexture = new Graphics(),
 		sizes = {
