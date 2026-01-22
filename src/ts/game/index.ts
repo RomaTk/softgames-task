@@ -1,13 +1,14 @@
 import '@pixi/layout'
 import * as Pixi from 'pixi.js'
 import { Application, Container } from 'pixi.js'
+import { AceOfShadowsTask } from './tasks/ace-of-shadows/index.js'
 import { MagicWordsTask } from './tasks/magic-words/index.js'
 import { Menu } from './menu/index.js'
 import { OnTickResizeObserver } from './resize-observer.js'
-import { AceOfShadowsTask } from './tasks/ace-of-shadows/index.js'
+import { PhoenixFlameTask } from './tasks/phoenix-flame/index.js'
 import { PixiPlugin } from 'gsap/PixiPlugin'
 import { gsap } from 'gsap'
-import { PhoenixFlameTask } from './tasks/phoenix-flame/index.js'
+
 gsap.registerPlugin(PixiPlugin)
 PixiPlugin.registerPIXI(Pixi)
 
@@ -114,7 +115,7 @@ export class Game {
 	public display(): void {
 		this.menu.display(false)
 		// this.launchAceOfShadowsTask()
-		this.launchPhoenixFlameTask()
+		// this.launchPhoenixFlameTask()
 		// this.launchMagicWordsTask().catch((err: unknown) => {
 		// 	console.error('Failed to launch Magic Words task', err)
 		// })

@@ -1,6 +1,6 @@
-/* eslint-disable max-statements */
-/* eslint-disable max-lines-per-function */
-import { Texture, Sprite } from 'pixi.js'
+// Here we have many styles, so mcgic numbers is okay for many places
+/* eslint-disable @typescript-eslint/no-magic-numbers */
+import { Sprite, type Texture } from 'pixi.js'
 import { gsap } from 'gsap'
 
 export class LikeFireParticle extends Sprite {
@@ -27,22 +27,21 @@ export class LikeFireParticle extends Sprite {
 	}
 
 	// Using GSAP, as it will be more clear what is happening for 10 particles will not have performance issues
+	// This function is long but it's ok as it's only one function per particle
+	// eslint-disable-next-line max-lines-per-function, max-statements
 	public activate(): void {
 		this.destroyTimeline()
 
 		this.active = true
 		this.visible = true
 
-		// Initial State
-		const life = 1.5 + Math.random() * 0.5 // Duration in seconds
+		const life = 1.5 + Math.random() * 0.5
 
-		this.x = (Math.random() - 0.5) * 30
-		this.y = 0
+		this.position.set((Math.random() - 0.5) * 30, 0)
 		this.alpha = 0
 		this.scale.set(0.5 + Math.random() * 0.3)
 		this.rotation = Math.random() * Math.PI * 2
 
-		// Create GSAP Timeline
 		this.timeline = gsap.timeline({
 			onComplete: () => {
 				this.destroyTimeline()
@@ -52,53 +51,43 @@ export class LikeFireParticle extends Sprite {
 			},
 			paused: true,
 		})
-
-		// 1. Move Up (Decelerating to simulate physics/drag)
 		this.timeline.to(
 			this,
 			{
-				y: -150 - Math.random() * 80, // Target Y
 				duration: life,
-				ease: 'power2.out', // Start fast, slow down at top
+				ease: 'power2.out',
+				[`y`]: -150 - Math.random() * 80,
 			},
 			0,
 		)
-
-		// 2. Drift Horizontally (Linear)
 		this.timeline.to(
 			this,
 			{
-				x: this.x + (Math.random() - 0.5) * 60,
 				duration: life,
 				ease: 'none',
+				[`x`]: this.x + (Math.random() - 0.5) * 60,
 			},
 			0,
 		)
-
-		// 3. Grow (Linear)
 		this.timeline.to(
 			this.scale,
 			{
-				x: '+=0.6', // Grow by 0.6
-				y: '+=0.6',
 				duration: life,
 				ease: 'none',
+				[`x`]: '+=0.6',
+				[`y`]: '+=0.6',
 			},
 			0,
 		)
-
-		// 4. Rotate
 		this.timeline.to(
 			this,
 			{
-				rotation: this.rotation + 2,
 				duration: life,
 				ease: 'none',
+				rotation: this.rotation + 2,
 			},
 			0,
 		)
-
-		// 5. Fade In
 		this.timeline.to(
 			this,
 			{
@@ -108,8 +97,6 @@ export class LikeFireParticle extends Sprite {
 			},
 			0,
 		)
-
-		// 6. Fade Out
 		this.timeline.to(
 			this,
 			{
@@ -118,7 +105,7 @@ export class LikeFireParticle extends Sprite {
 				ease: 'power1.in',
 			},
 			life * 0.2,
-		) // Start after fade in finishes
+		)
 
 		this.timeline.play(0)
 	}

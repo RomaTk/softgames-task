@@ -94,6 +94,7 @@ const config: TEslintConfig[] = [
 								'Container',
 								'Sprite',
 								'Application',
+								'Texture',
 							],
 							package: 'pixi.js',
 						},

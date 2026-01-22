@@ -1,7 +1,6 @@
-/* eslint-disable max-statements */
-import { type Application, Container, type Texture, Ticker } from 'pixi.js'
-import { createFireTexture } from './create-texture.js'
+import { type Application, Container, type Texture } from 'pixi.js'
 import { LikeFireParticle } from './one-particle.js'
+import { createFireTexture } from './create-texture.js'
 import { gsap } from 'gsap'
 
 export class PhoenixFlameTask<App extends Application> {
@@ -10,7 +9,7 @@ export class PhoenixFlameTask<App extends Application> {
 	protected readonly spawnTime: number
 	protected readonly texture: Texture
 	protected readonly textureSize: number
-	protected readonly maxParticles: number = 10
+	protected readonly maxParticles: number
 	protected readonly particles: Set<LikeFireParticle>
 
 	public constructor(app: App) {
@@ -23,14 +22,27 @@ export class PhoenixFlameTask<App extends Application> {
 	}
 
 	public resize(width: number, height: number): void {
-		this.viewObject.position.set(width / 2, height / 2)
+		const centerFactor = 0.5,
+			maxHeight = 600,
+			maxWidthHeight = 200,
+			standardScale = 1
+
+		this.viewObject.position.set(
+			width * centerFactor,
+			height * centerFactor,
+		)
+
+		this.viewObject.scale.set(
+			Math.min(width / maxWidthHeight, height / maxHeight, standardScale),
+		)
 	}
 
 	public display(): void {
 		const increment = 1
 		for (let index = 0; index < this.maxParticles; index += increment) {
 			const particle = new LikeFireParticle(this.texture, () => {
-				if (Math.random() < 0.7) {
+				const chance = 0.7
+				if (Math.random() < chance) {
 					particle.activate()
 				}
 			})
@@ -58,11 +70,7 @@ export class PhoenixFlameTask<App extends Application> {
 	protected createDelayedSpawn(): void {
 		this.destroyDelayedSpawn()
 		this.delayedSpawn ??= gsap.delayedCall(this.spawnTime, () => {
-			if (this.particles.size < this.maxParticles) {
-				const particle = new LikeFireParticle(this.texture)
-				this.viewObject.addChild(particle)
-				this.particles.add(particle)
-			} else if (this.particles.size >= this.maxParticles) {
+			if (this.particles.size >= this.maxParticles) {
 				const deadParticle = this.particles
 					.values()
 					.find(
