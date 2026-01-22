@@ -122,7 +122,7 @@ export class Game {
 	public destroy(): void {
 		this.resizeObserver.disconnect()
 		this.menu.destroy()
-		this.destoyTasks()
+		this.destroyTasks()
 		this.application.destroy(true)
 	}
 
@@ -138,8 +138,7 @@ export class Game {
 		return window.devicePixelRatio * (this.maxPixelsSize / providedMaxSide)
 	}
 
-	// TODO fix naming
-	protected destoyTasks(except?: unknown): void {
+	protected destroyTasks(except?: unknown): void {
 		this.tasks.forEach((task: TTask) => {
 			if (typeof except === 'function' && task instanceof except) {
 				return
@@ -170,7 +169,7 @@ export class Game {
 		this.tasks.add(task)
 		task.resize(document.body.clientWidth, document.body.clientHeight)
 		this.tasksContainer.addChild(task.viewObject)
-		this.destoyTasks(MagicWordsTask)
+		this.destroyTasks(MagicWordsTask)
 		await task.display()
 	}
 
@@ -183,7 +182,7 @@ export class Game {
 		task.resize(document.body.clientWidth, document.body.clientHeight)
 		task.display()
 		this.tasksContainer.addChild(task.viewObject)
-		this.destoyTasks(AceOfShadowsTask)
+		this.destroyTasks(AceOfShadowsTask)
 	}
 
 	protected launchPhoenixFlameTask(): void {
@@ -195,6 +194,6 @@ export class Game {
 		task.resize(document.body.clientWidth, document.body.clientHeight)
 		task.display()
 		this.tasksContainer.addChild(task.viewObject)
-		this.destoyTasks(PhoenixFlameTask)
+		this.destroyTasks(PhoenixFlameTask)
 	}
 }
