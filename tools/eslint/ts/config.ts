@@ -118,6 +118,7 @@ const config: TEslintConfig[] = [
 				...(maxStrictTsReactConfig.languageOptions?.['globals'] ?? {}),
 				// Here is globals for browser (not all for browser - to control better what is added)
 				document: globals.browser.document,
+				setTimeout: globals.browser.setTimeout,
 			},
 			parserOptions: {
 				...(maxStrictTsReactConfig.languageOptions?.['parserOptions'] ??

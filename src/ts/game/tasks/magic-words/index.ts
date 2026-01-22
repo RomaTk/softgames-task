@@ -1,6 +1,7 @@
 import { Assets, Container } from 'pixi.js'
 import { Data } from './data.js'
 import { Dialogue } from './dialogue/index.js'
+import { ErrorCatcher } from '../../error-catcher.js'
 import { LoadForTask } from '../load.js'
 
 export class MagicWordsTask {
@@ -75,7 +76,7 @@ export class MagicWordsTask {
 	public async display(): Promise<void> {
 		this.displayLoading()
 		await this.load()
-		this.displayDialogue()
+		await this.displayDialogue()
 		this.destroyLoadForTask()
 	}
 
@@ -83,6 +84,11 @@ export class MagicWordsTask {
 		this.destroyLoadForTask()
 		this.destroyDialogue()
 		this.viewObject.destroy(true)
+		this.data.avatars.forEach((avatar: { readonly url: string }) => {
+			Assets.unload(avatar.url).catch((err: unknown) => {
+				ErrorCatcher.instance.throw(err, false)
+			})
+		})
 	}
 
 	protected displayLoading(): void {
@@ -96,15 +102,15 @@ export class MagicWordsTask {
 		this.viewObject.addChild(this.loadForTask.viewObject)
 	}
 
-	protected displayDialogue(): void {
+	protected async displayDialogue(): Promise<void> {
 		const noSize = 0
 		this.dialogue ??= new Dialogue(this.data)
 		this.dialogue.resize(
 			this.lastResizeData?.width ?? noSize,
 			this.lastResizeData?.height ?? noSize,
 		)
-		this.dialogue.display()
 		this.viewObject.addChild(this.dialogue.viewObject)
+		await this.dialogue.display()
 	}
 
 	protected destroyLoadForTask(): void {

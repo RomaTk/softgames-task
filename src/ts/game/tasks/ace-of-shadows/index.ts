@@ -295,6 +295,7 @@ export class AceOfShadowsTask<App extends Application> {
 					...props.finalPosition,
 					duration: props.duration,
 					ease: 'power2.inOut',
+					// eslint-disable-next-line max-statements, max-lines-per-function
 					onUpdate: () => {
 						if (props.card.parent === this.flyingCardsContainer) {
 							props.card.position.set(position.x, position.y)
@@ -333,11 +334,15 @@ export class AceOfShadowsTask<App extends Application> {
 							})
 
 							if (this.animationTimeline?.reversed() === true) {
-								props.card.scale.set(-1)
-								props.card.anchor.set(1)
+								const reflect = -1,
+									reflectAnchor = 1
+								props.card.scale.set(reflect)
+								props.card.anchor.set(reflectAnchor)
 							} else {
-								props.card.scale.set(1)
-								props.card.anchor.set(0)
+								const defaultAnchor = 0,
+									defaultScale = 1
+								props.card.scale.set(defaultScale)
+								props.card.anchor.set(defaultAnchor)
 							}
 							props.card.skew.set(skewX, skewY)
 						}

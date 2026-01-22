@@ -2,6 +2,8 @@ import '@pixi/layout'
 import * as Pixi from 'pixi.js'
 import { Application, Container } from 'pixi.js'
 import { AceOfShadowsTask } from './tasks/ace-of-shadows/index.js'
+import { ErrorCatcher } from './error-catcher.js'
+import { FPSMeter } from './fps-meter.js'
 import { MagicWordsTask } from './tasks/magic-words/index.js'
 import { Menu } from './menu/index.js'
 import { OnTickResizeObserver } from './resize-observer.js'
@@ -26,7 +28,9 @@ export type TTask = {
 }
 
 export class Game {
+	public readonly errorCatcher: ErrorCatcher
 	protected loadPromise?: Promise<TLoadStatus>
+	protected fpsMeter?: FPSMeter
 	protected readonly application: Application
 	protected readonly menu: Menu
 	protected readonly resizeObserver: OnTickResizeObserver
@@ -36,6 +40,16 @@ export class Game {
 	protected readonly tasksContainer: Pixi.Container
 
 	public constructor() {
+		this.errorCatcher = ErrorCatcher.instance
+		this.errorCatcher.actionOnError = (): void => {
+			const { parentElement } = this.application.canvas
+			this.destroy()
+			if (parentElement) {
+				parentElement.textContent =
+					'An error occurred. Please, reload the page.'
+				parentElement.removeChild(this.application.canvas)
+			}
+		}
 		this.application = new Application()
 		this.menu = new Menu({
 			tasks: [
@@ -113,21 +127,19 @@ export class Game {
 	}
 
 	public display(): void {
-		this.menu.display(false)
-		// this.launchAceOfShadowsTask()
-		// this.launchPhoenixFlameTask()
-		// this.launchMagicWordsTask().catch((err: unknown) => {
-		// 	console.error('Failed to launch Magic Words task', err)
-		// })
+		this.menu.display(true)
 		this.application.stage.addChild(this.tasksContainer)
 		this.application.stage.addChild(this.menu.viewObject)
+		this.fpsMeter ??= new FPSMeter()
+		this.application.stage.addChild(this.fpsMeter)
 		this.resizeObserver.observe(document.body)
 	}
 
 	public destroy(): void {
 		this.resizeObserver.disconnect()
 		this.menu.destroy()
-		this.destoyTasks()
+		this.destroyTasks()
+		this.fpsMeter?.destroy()
 		this.application.destroy(true)
 	}
 
@@ -143,7 +155,7 @@ export class Game {
 		return window.devicePixelRatio * (this.maxPixelsSize / providedMaxSide)
 	}
 
-	protected destoyTasks(except?: unknown): void {
+	protected destroyTasks(except?: unknown): void {
 		this.tasks.forEach((task: TTask) => {
 			if (typeof except === 'function' && task instanceof except) {
 				return
@@ -173,10 +185,9 @@ export class Game {
 		const task = new MagicWordsTask()
 		this.tasks.add(task)
 		task.resize(document.body.clientWidth, document.body.clientHeight)
-		const toAwait = task.display()
 		this.tasksContainer.addChild(task.viewObject)
-		await toAwait
-		this.destoyTasks(MagicWordsTask)
+		this.destroyTasks(MagicWordsTask)
+		await task.display()
 	}
 
 	protected launchAceOfShadowsTask(): void {
@@ -188,7 +199,7 @@ export class Game {
 		task.resize(document.body.clientWidth, document.body.clientHeight)
 		task.display()
 		this.tasksContainer.addChild(task.viewObject)
-		this.destoyTasks(AceOfShadowsTask)
+		this.destroyTasks(AceOfShadowsTask)
 	}
 
 	protected launchPhoenixFlameTask(): void {
@@ -200,6 +211,6 @@ export class Game {
 		task.resize(document.body.clientWidth, document.body.clientHeight)
 		task.display()
 		this.tasksContainer.addChild(task.viewObject)
-		this.destoyTasks(PhoenixFlameTask)
+		this.destroyTasks(PhoenixFlameTask)
 	}
 }

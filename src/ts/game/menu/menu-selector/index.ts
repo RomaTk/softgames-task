@@ -103,6 +103,7 @@ export class MenuSelector {
 			position: 'absolute',
 			width: '100%',
 		}
+		this.bg.interactive = true
 		this.bg.tint = 0x945201
 		this.viewObject.addChild(this.bg)
 	}

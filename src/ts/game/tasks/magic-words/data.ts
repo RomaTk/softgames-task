@@ -63,12 +63,7 @@ export class Data {
 	protected static parseData(
 		data: unknown,
 	): z.infer<(typeof Data)['dataSchema']> {
-		try {
-			return this.dataSchema.parse(data)
-		} catch (err: unknown) {
-			console.error('Data parsing error:', err)
-			throw err
-		}
+		return this.dataSchema.parse(data)
 	}
 
 	public parse(data: unknown): void {

@@ -6,6 +6,7 @@ import {
 	LayoutText,
 } from '@pixi/layout/components'
 import type { Data as DataFromEndpoint } from '../data.js'
+import { ErrorCatcher } from '../../../error-catcher.js'
 import gsap from 'gsap'
 
 export type TMessageOptions = {
@@ -60,11 +61,13 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 			message: this.generateMessageText(false),
 		}
 
-		this.display()
+		this.display().catch((err: unknown) => {
+			ErrorCatcher.instance.throw(err, false)
+		})
 	}
 
-	// It is public but for this class no sense to be used outside
-	public display(): void {
+	// Async as we need to update layout update
+	public async display(): Promise<void> {
 		this.messageContainer.addChild(this.authorName, this.messageText)
 		this.viewObject.addChild(this.authorAvatar)
 		this.viewObject.addChild(this.messageContainer)
@@ -73,6 +76,7 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 			maxWidth: this.authorName.width,
 		}
 		this.textLayoutFix()
+		await this.resizeDelayedCall
 	}
 
 	public resize(): void {
@@ -82,7 +86,7 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 	public destroy(): void {
 		this.cornerRect.destroy(true)
 		this.authorName.destroy(true)
-		this.authorAvatar.destroy(true)
+		this.authorAvatar.destroy()
 		this.messageText.destroy(true)
 		this.messageContainer.destroy(true)
 		this.viewObject.destroy(true)
@@ -143,13 +147,16 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 	protected generateMessageText(isWordWrap: boolean): LayoutHTMLText {
 		const messageText = new LayoutHTMLText({
 			style: {
-				fill: 0xff1010,
-				fontSize: 20,
+				fill: '#3495eb',
+				fontFamily: 'Arial',
+				fontSize: 22,
+				fontWeight: 'bold',
+				padding: 6,
+				stroke: '#1a4e7a',
 				wordWrap: isWordWrap,
 			},
 			text: this.htmlTextWithEmojies,
 		})
-
 		return messageText
 	}
 
@@ -175,8 +182,11 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 	protected generateAuthorName(): LayoutText {
 		const authorName = new LayoutText({
 			style: {
-				fill: 0xff1010,
-				fontSize: 30,
+				fill: '#ffb300',
+				fontFamily: 'Arial',
+				fontSize: 26,
+				fontWeight: 'bold',
+				stroke: '#a67c00',
 			},
 			text: this.options.author.name,
 		})
@@ -210,7 +220,7 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 		const layoutContainer = new LayoutContainer({
 			layout: {
 				alignItems: 'flex-start',
-				backgroundColor: 0x3495eb,
+				backgroundColor: 0x4a148c,
 				borderRadius: 10,
 				display: 'flex',
 				flexDirection: 'column',
@@ -234,7 +244,7 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 			.roundRect(0, 0, 20, 20, 0)
 			// No sense to create variables for them
 			// eslint-disable-next-line @typescript-eslint/no-magic-numbers
-			.fill(0x3495eb)
+			.fill(0x4a148c)
 		cornerRect.layout = {
 			position: 'absolute',
 			...((): { right?: number; left?: number } => {
@@ -262,7 +272,23 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 				if (typeof emojie !== 'undefined') {
 					changedText = changedText.replaceAll(
 						`{${emojie}}`,
-						`<img src="${this.data.emojies.find((element: { readonly name: string }) => element.name === emojie)?.base64 ?? ''}" width="24" height="24" style="vertical-align: middle" />`,
+						`<img src="${
+							this.data.emojies.find(
+								(element: { readonly name: string }) =>
+									element.name === emojie,
+							)?.base64 ??
+							((): string => {
+								try {
+									throw Error(
+										`Emoji with name "${emojie}" not found`,
+									)
+								} catch (err) {
+									ErrorCatcher.instance.throw(err, true)
+								}
+
+								return ''
+							})()
+						}" width="24" height="24" style="vertical-align: middle" />`,
 					)
 				}
 			},

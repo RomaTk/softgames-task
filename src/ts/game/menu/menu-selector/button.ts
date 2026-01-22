@@ -1,5 +1,6 @@
-import { Container, Sprite, Text, Texture } from 'pixi.js'
+import { Container, Sprite, Text, TextStyle, Texture } from 'pixi.js'
 import Emittery from 'emittery'
+import { ErrorCatcher } from '../../error-catcher.js'
 
 export type TMenuSelectorButtonEvents = {
 	buttonClicked: null
@@ -13,7 +14,12 @@ export class MenuSelectorButton {
 
 	public constructor(label: string) {
 		this.viewObject = new Container()
-		this.label = new Text({ text: label })
+		this.label = new Text({
+			style: new TextStyle({
+				fontWeight: 'bold',
+			}),
+			text: label,
+		})
 		this.bg = new Sprite(Texture.WHITE)
 		this.emitter = new Emittery()
 	}
@@ -42,14 +48,8 @@ export class MenuSelectorButton {
 			width: '95%',
 		}
 		this.label.style.fill = '#ffffff'
+		this.addVisualEffects()
 		this.viewObject.addChild(this.label)
-		this.viewObject.interactive = true
-		this.viewObject.cursor = 'pointer'
-		this.viewObject.addEventListener('pointertap', () => {
-			this.emitter.emit('buttonClicked', null).catch((err: unknown) => {
-				console.error(err)
-			})
-		})
 	}
 
 	public destroy(): void {
@@ -57,5 +57,37 @@ export class MenuSelectorButton {
 		this.bg.destroy(true)
 		this.viewObject.destroy(true)
 		this.emitter.clearListeners()
+	}
+
+	protected addVisualEffects(): void {
+		const { scaleUp, scaleDown } = ((): {
+			scaleUp: () => void
+			scaleDown: () => void
+		} => {
+			const hoverScale = 1.08,
+				normalScale = 1
+
+			return {
+				scaleDown: (): void => {
+					this.viewObject.scale.set(normalScale)
+				},
+				scaleUp: (): void => {
+					this.viewObject.scale.set(hoverScale)
+				},
+			}
+		})()
+		this.viewObject.addEventListener('pointerover', scaleUp)
+		this.viewObject.addEventListener('pointerout', scaleDown)
+		this.viewObject.addEventListener('pointerdown', scaleUp)
+		this.viewObject.addEventListener('pointerup', scaleDown)
+		this.viewObject.addEventListener('pointerupoutside', scaleDown)
+
+		this.viewObject.interactive = true
+		this.viewObject.cursor = 'pointer'
+		this.viewObject.addEventListener('pointertap', () => {
+			this.emitter.emit('buttonClicked', null).catch((err: unknown) => {
+				ErrorCatcher.instance.throw(err, false)
+			})
+		})
 	}
 }

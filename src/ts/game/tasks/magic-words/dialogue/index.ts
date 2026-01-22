@@ -1,5 +1,6 @@
 import { LayoutContainer, ScrollSpring } from '@pixi/layout/components'
 import type { Data as DataFromEndpoint } from '../data.js'
+import { ErrorCatcher } from '../../../error-catcher.js'
 import { Message } from './message.js'
 
 // Take into account that this class can be used only after initialization of application with layout plugin
@@ -50,11 +51,22 @@ export class Dialogue<Data extends DataFromEndpoint> {
 		)
 	}
 
-	public display(): void {
+	public async display(): Promise<void> {
+		// HACK Here alpha is used as hack (look more in message (wrap + layout problem) )
+		this.viewObject.alpha = 0.001
 		this.viewObject.layout = {
 			display: 'flex',
 			flexDirection: 'column',
 		}
+
+		await Promise.all(
+			this.messages.map(
+				async (message: { readonly display: () => Promise<void> }) =>
+					message.display(),
+			),
+		)
+
+		this.viewObject.alpha = 1
 	}
 
 	public destroy(): void {
@@ -97,7 +109,7 @@ export class Dialogue<Data extends DataFromEndpoint> {
 					`Avatar for name "${messageData.name}" not found`,
 				)
 			} catch (err) {
-				console.warn(err)
+				ErrorCatcher.instance.throw(err, true)
 			}
 		}
 

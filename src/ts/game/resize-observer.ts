@@ -1,3 +1,4 @@
+import { ErrorCatcher } from './error-catcher.js'
 import { Ticker } from 'pixi.js'
 
 export class OnTickResizeObserver extends ResizeObserver {
@@ -18,7 +19,7 @@ export class OnTickResizeObserver extends ResizeObserver {
 				this.isUpdateWasMade = false
 				callback()
 			} catch (err: unknown) {
-				console.error(err)
+				ErrorCatcher.instance.throw(err, false)
 			}
 		}
 	}
