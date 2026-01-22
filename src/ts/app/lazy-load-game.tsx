@@ -21,6 +21,7 @@ export const ComponentGame = lazy(async () => {
 				}),
 		}
 	} catch (err) {
+		// eslint-disable-next-line no-console, no-undef
 		console.error(err)
 		const errorResult: { default: FC } = {
 			default: () => <div>{'Failed to load game.'}</div>,

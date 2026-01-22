@@ -3,6 +3,7 @@ import * as Pixi from 'pixi.js'
 import { Application, Container } from 'pixi.js'
 import { AceOfShadowsTask } from './tasks/ace-of-shadows/index.js'
 import { ErrorCatcher } from './error-catcher.js'
+import { FPSMeter } from './fps-meter.js'
 import { MagicWordsTask } from './tasks/magic-words/index.js'
 import { Menu } from './menu/index.js'
 import { OnTickResizeObserver } from './resize-observer.js'
@@ -29,6 +30,7 @@ export type TTask = {
 export class Game {
 	public readonly errorCatcher: ErrorCatcher
 	protected loadPromise?: Promise<TLoadStatus>
+	protected fpsMeter?: FPSMeter
 	protected readonly application: Application
 	protected readonly menu: Menu
 	protected readonly resizeObserver: OnTickResizeObserver
@@ -128,6 +130,8 @@ export class Game {
 		this.menu.display(true)
 		this.application.stage.addChild(this.tasksContainer)
 		this.application.stage.addChild(this.menu.viewObject)
+		this.fpsMeter ??= new FPSMeter()
+		this.application.stage.addChild(this.fpsMeter)
 		this.resizeObserver.observe(document.body)
 	}
 
@@ -135,6 +139,7 @@ export class Game {
 		this.resizeObserver.disconnect()
 		this.menu.destroy()
 		this.destroyTasks()
+		this.fpsMeter?.destroy()
 		this.application.destroy(true)
 	}
 
