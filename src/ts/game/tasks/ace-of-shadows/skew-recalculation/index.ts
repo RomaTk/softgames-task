@@ -24,7 +24,7 @@ export const skewRecalculation = (args: {
 			if (progress < progressTimeSeparator) {
 				// Specific numbers for visual effect
 				// eslint-disable-next-line @typescript-eslint/no-magic-numbers
-				return -4 * (timeProgress - 0.5) ** 2 + 1
+				return -20 * (timeProgress - 0.5) ** 2 + 1
 			}
 			// Second half: much smaller, gentler negative overshoot
 
@@ -43,14 +43,14 @@ export const skewRecalculation = (args: {
 					// First half: positive overshoot
 					if (progress < progressTimeSeparator) {
 						return {
-							max: 2.5,
-							min: 0.5,
+							max: 15,
+							min: 3,
 						}
 					}
 					// Second half: much smaller, gentler negative overshoot
 					return {
-						max: 0.01,
-						min: 0.3,
+						max: 1.2,
+						min: 36,
 					}
 				})(),
 			),
