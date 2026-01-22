@@ -70,17 +70,15 @@ export class PhoenixFlameTask<App extends Application> {
 	protected createDelayedSpawn(): void {
 		this.destroyDelayedSpawn()
 		this.delayedSpawn ??= gsap.delayedCall(this.spawnTime, () => {
-			if (this.particles.size >= this.maxParticles) {
-				const deadParticle = this.particles
-					.values()
-					.find(
-						(particle: { readonly isActive: boolean }) =>
-							!particle.isActive,
-					)
-				if (deadParticle) {
-					deadParticle.activate()
-					this.viewObject.addChild(deadParticle)
-				}
+			const deadParticle = this.particles
+				.values()
+				.find(
+					(particle: { readonly isActive: boolean }) =>
+						!particle.isActive,
+				)
+			if (deadParticle) {
+				deadParticle.activate()
+				this.viewObject.addChild(deadParticle)
 			}
 			this.createDelayedSpawn()
 		})
