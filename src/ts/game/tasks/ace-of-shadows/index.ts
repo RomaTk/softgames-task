@@ -298,28 +298,47 @@ export class AceOfShadowsTask<App extends Application> {
 					onUpdate: () => {
 						if (props.card.parent === this.flyingCardsContainer) {
 							props.card.position.set(position.x, position.y)
-						}
-					},
-				},
-				noDelayOnStart,
-			)
-			.fromTo(
-				props.card.skew,
-				{ [`x`]: props.card.skew.x, [`y`]: props.card.skew.y },
-				{
-					...props.finalSkew,
-					duration: props.duration,
-					onUpdate: () => {
-						if (props.card.parent === this.flyingCardsContainer) {
+
+							// POSSIBLE_BUG - I do not change final and start skew as they same in this example
 							const { skewX, skewY } = skewRecalculation({
 								cardsInfo: {
-									currentIndex: props.index,
+									currentIndex: ((): number => {
+										if (
+											this.animationTimeline?.reversed() ===
+											true
+										) {
+											const reduceToLastIndex = 1
+											return (
+												this.numberCards -
+												reduceToLastIndex -
+												props.index
+											)
+										}
+										return props.index
+									})(),
 									totalCount: this.numberCards,
 								},
 								finalSkew: props.finalSkew,
-								progress: timeline.progress(),
+								progress: ((): number => {
+									if (
+										this.animationTimeline?.reversed() ===
+										true
+									) {
+										const maxProgress = 1
+										return maxProgress - timeline.progress()
+									}
+									return timeline.progress()
+								})(),
 								startSkew,
 							})
+
+							if (this.animationTimeline?.reversed() === true) {
+								props.card.scale.set(-1)
+								props.card.anchor.set(1)
+							} else {
+								props.card.scale.set(1)
+								props.card.anchor.set(0)
+							}
 							props.card.skew.set(skewX, skewY)
 						}
 					},
