@@ -83,6 +83,11 @@ export class MagicWordsTask {
 		this.destroyLoadForTask()
 		this.destroyDialogue()
 		this.viewObject.destroy(true)
+		this.data.avatars.forEach((avatar: { readonly url: string }) => {
+			Assets.unload(avatar.url).catch((err: unknown) => {
+				console.error(err)
+			})
+		})
 	}
 
 	protected displayLoading(): void {

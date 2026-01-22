@@ -85,7 +85,7 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 	public destroy(): void {
 		this.cornerRect.destroy(true)
 		this.authorName.destroy(true)
-		this.authorAvatar.destroy(true)
+		this.authorAvatar.destroy()
 		this.messageText.destroy(true)
 		this.messageContainer.destroy(true)
 		this.viewObject.destroy(true)
@@ -265,7 +265,18 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 				if (typeof emojie !== 'undefined') {
 					changedText = changedText.replaceAll(
 						`{${emojie}}`,
-						`<img src="${this.data.emojies.find((element: { readonly name: string }) => element.name === emojie)?.base64 ?? ''}" width="24" height="24" style="vertical-align: middle" />`,
+						`<img src="${
+							this.data.emojies.find(
+								(element: { readonly name: string }) =>
+									element.name === emojie,
+							)?.base64 ??
+							((): string => {
+								console.warn(
+									`Emoji with name "${emojie}" not found`,
+								)
+								return ''
+							})()
+						}" width="24" height="24" style="vertical-align: middle" />`,
 					)
 				}
 			},
