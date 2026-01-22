@@ -60,11 +60,13 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 			message: this.generateMessageText(false),
 		}
 
-		this.display()
+		this.display().catch((err: unknown) => {
+			console.error('Failed to display message', err)
+		})
 	}
 
-	// It is public but for this class no sense to be used outside
-	public display(): void {
+	// Async as we need to update layout update
+	public async display(): Promise<void> {
 		this.messageContainer.addChild(this.authorName, this.messageText)
 		this.viewObject.addChild(this.authorAvatar)
 		this.viewObject.addChild(this.messageContainer)
@@ -73,6 +75,7 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 			maxWidth: this.authorName.width,
 		}
 		this.textLayoutFix()
+		await this.resizeDelayedCall
 	}
 
 	public resize(): void {

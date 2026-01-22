@@ -75,7 +75,7 @@ export class MagicWordsTask {
 	public async display(): Promise<void> {
 		this.displayLoading()
 		await this.load()
-		this.displayDialogue()
+		await this.displayDialogue()
 		this.destroyLoadForTask()
 	}
 
@@ -96,15 +96,15 @@ export class MagicWordsTask {
 		this.viewObject.addChild(this.loadForTask.viewObject)
 	}
 
-	protected displayDialogue(): void {
+	protected async displayDialogue(): Promise<void> {
 		const noSize = 0
 		this.dialogue ??= new Dialogue(this.data)
 		this.dialogue.resize(
 			this.lastResizeData?.width ?? noSize,
 			this.lastResizeData?.height ?? noSize,
 		)
-		this.dialogue.display()
 		this.viewObject.addChild(this.dialogue.viewObject)
+		await this.dialogue.display()
 	}
 
 	protected destroyLoadForTask(): void {

@@ -113,12 +113,7 @@ export class Game {
 	}
 
 	public display(): void {
-		this.menu.display(false)
-		// this.launchAceOfShadowsTask()
-		// this.launchPhoenixFlameTask()
-		// this.launchMagicWordsTask().catch((err: unknown) => {
-		// 	console.error('Failed to launch Magic Words task', err)
-		// })
+		this.menu.display(true)
 		this.application.stage.addChild(this.tasksContainer)
 		this.application.stage.addChild(this.menu.viewObject)
 		this.resizeObserver.observe(document.body)
@@ -143,6 +138,7 @@ export class Game {
 		return window.devicePixelRatio * (this.maxPixelsSize / providedMaxSide)
 	}
 
+	// TODO fix naming
 	protected destoyTasks(except?: unknown): void {
 		this.tasks.forEach((task: TTask) => {
 			if (typeof except === 'function' && task instanceof except) {
@@ -173,10 +169,9 @@ export class Game {
 		const task = new MagicWordsTask()
 		this.tasks.add(task)
 		task.resize(document.body.clientWidth, document.body.clientHeight)
-		const toAwait = task.display()
 		this.tasksContainer.addChild(task.viewObject)
-		await toAwait
 		this.destoyTasks(MagicWordsTask)
+		await task.display()
 	}
 
 	protected launchAceOfShadowsTask(): void {
