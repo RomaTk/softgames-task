@@ -13,7 +13,7 @@ const exportObjects = ((): { ComponentGame: FC; game: PixiGame } => {
 				if (currentDiv) {
 					currentDiv.appendChild(game.canvas)
 					game.canvas.addEventListener(
-						'pointerdown',
+						'click',
 						() => {
 							game.canvas
 								.requestFullscreen()
