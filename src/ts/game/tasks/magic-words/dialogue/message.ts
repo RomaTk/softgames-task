@@ -106,6 +106,9 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 		this.resizeDelayedCall ??= gsap.delayedCall(
 			delayBiggerThanThrottle,
 			(): void => {
+				if (!this.resizeDelayedCall) {
+					return
+				}
 				this.destroyResizeDelayedCall()
 				const paddinngMargin = 30,
 					saveHeight = 20
