@@ -229,13 +229,9 @@ export class AceOfShadowsTask<App extends Application> {
 					throw new Error('No animation tween')
 				}
 				if (!globalTimeLine.reversed()) {
-					const asFirstChild = 0,
-						deAttachedCard = this.decks.from.getTopCard()
-
-					this.flyingCardsContainer.addChildAt(
-						deAttachedCard,
-						asFirstChild,
-					)
+					const deAttachedCard = this.decks.from.getTopCard()
+					// POSSIBLE_BUG - shold be adjusted based on animation (overlap logic) - with previous ease used another (look on changes to understand)
+					this.flyingCardsContainer.addChild(deAttachedCard)
 					// To make sure to change position in the same render frame
 					deAttachedCard.position = { ...props.startPosition }
 					return
@@ -294,7 +290,7 @@ export class AceOfShadowsTask<App extends Application> {
 				{
 					...props.finalPosition,
 					duration: props.duration,
-					ease: 'power2.inOut',
+					// Removed ease to look like 2s for preview, however I love ease: 'power2.inOut',
 					// eslint-disable-next-line max-statements, max-lines-per-function
 					onUpdate: () => {
 						if (props.card.parent === this.flyingCardsContainer) {
