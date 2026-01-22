@@ -69,7 +69,7 @@ export class PhoenixFlameTask<App extends Application> {
 
 	protected createDelayedSpawn(): void {
 		this.destroyDelayedSpawn()
-		this.delayedSpawn ??= gsap.delayedCall(this.spawnTime, () => {
+		this.delayedSpawn = gsap.delayedCall(this.spawnTime, () => {
 			const deadParticle = this.particles
 				.values()
 				.find(
