@@ -1,4 +1,4 @@
-import { Container, Sprite, Text, Texture } from 'pixi.js'
+import { Container, Sprite, Text, TextStyle, Texture } from 'pixi.js'
 import Emittery from 'emittery'
 import { ErrorCatcher } from '../../error-catcher.js'
 
@@ -14,7 +14,12 @@ export class MenuSelectorButton {
 
 	public constructor(label: string) {
 		this.viewObject = new Container()
-		this.label = new Text({ text: label })
+		this.label = new Text({
+			style: new TextStyle({
+				fontWeight: 'bold',
+			}),
+			text: label,
+		})
 		this.bg = new Sprite(Texture.WHITE)
 		this.emitter = new Emittery()
 	}

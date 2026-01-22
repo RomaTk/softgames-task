@@ -147,13 +147,16 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 	protected generateMessageText(isWordWrap: boolean): LayoutHTMLText {
 		const messageText = new LayoutHTMLText({
 			style: {
-				fill: 0xff1010,
-				fontSize: 20,
+				fill: '#3495eb',
+				fontFamily: 'Arial',
+				fontSize: 22,
+				fontWeight: 'bold',
+				padding: 6,
+				stroke: '#1a4e7a',
 				wordWrap: isWordWrap,
 			},
 			text: this.htmlTextWithEmojies,
 		})
-
 		return messageText
 	}
 
@@ -179,8 +182,11 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 	protected generateAuthorName(): LayoutText {
 		const authorName = new LayoutText({
 			style: {
-				fill: 0xff1010,
-				fontSize: 30,
+				fill: '#ffb300',
+				fontFamily: 'Arial',
+				fontSize: 26,
+				fontWeight: 'bold',
+				stroke: '#a67c00',
 			},
 			text: this.options.author.name,
 		})
@@ -214,7 +220,7 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 		const layoutContainer = new LayoutContainer({
 			layout: {
 				alignItems: 'flex-start',
-				backgroundColor: 0x3495eb,
+				backgroundColor: 0x4a148c,
 				borderRadius: 10,
 				display: 'flex',
 				flexDirection: 'column',
@@ -238,7 +244,7 @@ export class Message<Data extends DataFromEndpoint = DataFromEndpoint> {
 			.roundRect(0, 0, 20, 20, 0)
 			// No sense to create variables for them
 			// eslint-disable-next-line @typescript-eslint/no-magic-numbers
-			.fill(0x3495eb)
+			.fill(0x4a148c)
 		cornerRect.layout = {
 			position: 'absolute',
 			...((): { right?: number; left?: number } => {
