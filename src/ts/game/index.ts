@@ -7,6 +7,7 @@ import { OnTickResizeObserver } from './resize-observer.js'
 import { AceOfShadowsTask } from './tasks/ace-of-shadows/index.js'
 import { PixiPlugin } from 'gsap/PixiPlugin'
 import { gsap } from 'gsap'
+import { PhoenixFlameTask } from './tasks/phoenix-flame/index.js'
 gsap.registerPlugin(PixiPlugin)
 PixiPlugin.registerPIXI(Pixi)
 
@@ -52,7 +53,7 @@ export class Game {
 				{
 					label: 'Phoenix Flame',
 					launchTask: (): void => {
-						console.log('Phoenix Flame clicked')
+						this.launchPhoenixFlameTask()
 					},
 				},
 			],
@@ -112,7 +113,8 @@ export class Game {
 
 	public display(): void {
 		this.menu.display(false)
-		this.launchAceOfShadowsTask()
+		// this.launchAceOfShadowsTask()
+		this.launchPhoenixFlameTask()
 		// this.launchMagicWordsTask().catch((err: unknown) => {
 		// 	console.error('Failed to launch Magic Words task', err)
 		// })
@@ -186,5 +188,17 @@ export class Game {
 		task.display()
 		this.tasksContainer.addChild(task.viewObject)
 		this.destoyTasks(AceOfShadowsTask)
+	}
+
+	protected launchPhoenixFlameTask(): void {
+		if (this.isTaskRunning(PhoenixFlameTask)) {
+			return
+		}
+		const task = new PhoenixFlameTask(this.application)
+		this.tasks.add(task)
+		task.resize(document.body.clientWidth, document.body.clientHeight)
+		task.display()
+		this.tasksContainer.addChild(task.viewObject)
+		this.destoyTasks(PhoenixFlameTask)
 	}
 }

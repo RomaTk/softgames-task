@@ -14,7 +14,6 @@ const PADDING = 15
 // Colors
 const COLOR_BASE_WHITE = 0xfdfdfd
 const COLOR_PATTERN_MAIN = 0x2c3e90 // Royal Blue
-const COLOR_PATTERN_ACCENT = 0x1a2555 // Darker Blue
 const COLOR_GOLD = 0xd4af37
 
 export function createCardBack(app: Application): Texture {
@@ -58,29 +57,6 @@ export function createCardBack(app: Application): Texture {
 		)
 		.fill({ color: COLOR_PATTERN_MAIN })
 
-	// 3. Procedural Pattern (Cross-hatch / Lattice)
-	const patternGraphics = new Graphics()
-	const spacing = 20
-
-	// Using v8 GraphicsContext style for efficient drawing
-	patternGraphics.beginPath()
-
-	// Draw diagonal grid
-	for (let i = -CARD_WIDTH; i < CARD_WIDTH * 2; i += spacing) {
-		// Line type 1
-		patternGraphics.moveTo(i, -CARD_HEIGHT)
-		patternGraphics.lineTo(i - CARD_HEIGHT, CARD_HEIGHT)
-		// Line type 2
-		patternGraphics.moveTo(i, -CARD_HEIGHT)
-		patternGraphics.lineTo(i + CARD_HEIGHT, CARD_HEIGHT)
-	}
-
-	patternGraphics.stroke({
-		width: 1,
-		color: COLOR_PATTERN_ACCENT,
-		alpha: 0.5,
-	})
-
 	// 4. Ornate Center Piece (Geometric Mandalas)
 	const centerDecor = new Graphics()
 	const circleCount = 3
@@ -101,25 +77,10 @@ export function createCardBack(app: Application): Texture {
 		}
 	}
 
-	// Masking the pattern to the inner rectangle
-	const mask = new Graphics()
-		.roundRect(
-			-innerWidth / 2,
-			-innerHeight / 2,
-			innerWidth,
-			innerHeight,
-			CARD_RADIUS / 1.5,
-		)
-		.fill(0xffffff)
-
-	patternGraphics.mask = mask
-	centerDecor.mask = mask // Clip center design too? Maybe not, looks nice overlapping.
-
 	// Assemble Back
 	container.addChild(base)
 	container.addChild(outline)
 	container.addChild(patternBg)
-	container.addChild(patternGraphics)
 	container.addChild(centerDecor) // Add on top
 
 	// Add White Border Stroke around the blue area
