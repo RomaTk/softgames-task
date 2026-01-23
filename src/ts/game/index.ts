@@ -43,12 +43,11 @@ export class Game {
 		this.errorCatcher = ErrorCatcher.instance
 		this.errorCatcher.actionOnError = (): void => {
 			const { parentElement } = this.application.canvas
-			this.destroy()
 			if (parentElement) {
 				parentElement.textContent =
 					'An error occurred. Please, reload the page.'
-				parentElement.removeChild(this.application.canvas)
 			}
+			this.destroy()
 		}
 		this.application = new Application()
 		this.menu = new Menu({

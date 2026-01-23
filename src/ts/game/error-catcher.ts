@@ -18,6 +18,7 @@ export class ErrorCatcher {
 			} else {
 				throw err
 			}
+			return
 		}
 
 		// It is the only place where we can output the error
