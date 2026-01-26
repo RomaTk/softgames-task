@@ -13,8 +13,7 @@ export class MagicWordsTask {
 		ReturnType<(typeof staticFunctions)['createSpinner']>,
 		ReturnType<(typeof staticFunctions)['createViewObject']>,
 		TickerCallback<Ticker>,
-		Ticker,
-		typeof staticFunctions
+		Ticker
 	>
 	protected dialogue?: Dialogue<Data>
 	// We save this data because objects are created dynamically and need the value set immediately
