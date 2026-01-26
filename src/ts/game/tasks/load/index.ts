@@ -1,4 +1,4 @@
-export type StaticLoadForTask<
+export type TStaticLoadForTask<
 	CoreLike,
 	SpinnerLike,
 	ViewObjectLike,
@@ -41,7 +41,7 @@ export class LoadForTask<
 	ViewObjectLike extends TViewObject<CoreLike, SpinnerLike>,
 	TickerCallbackLike,
 	TickerLike extends TTicker<TickerCallbackLike>,
-	StaticFunctions extends StaticLoadForTask<
+	StaticFunctionsLike extends TStaticLoadForTask<
 		CoreLike,
 		SpinnerLike,
 		ViewObjectLike,
@@ -53,12 +53,12 @@ export class LoadForTask<
 	protected readonly tickerCallback: TickerCallbackLike
 	protected readonly spinner: SpinnerLike
 	protected readonly core: CoreLike
-	protected readonly staticFunctions: StaticFunctions
+	protected readonly staticFunctions: StaticFunctionsLike
 	protected readonly maxSide: number
 	protected readonly ticker: TickerLike
 
 	public constructor(
-		staticFunctions: StaticFunctions,
+		staticFunctions: StaticFunctionsLike,
 		resize: { readonly width: number; readonly height: number },
 		ticker: TickerLike,
 	) {
