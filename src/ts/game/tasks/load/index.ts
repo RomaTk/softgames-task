@@ -57,7 +57,6 @@ export class LoadForTask<
 	protected readonly maxSide: number
 	protected readonly ticker: TickerLike
 
-	// eslint-disable-next-line max-statements
 	public constructor(
 		staticFunctions: StaticFunctions,
 		resize: { readonly width: number; readonly height: number },
@@ -65,12 +64,10 @@ export class LoadForTask<
 	) {
 		this.ticker = ticker
 		this.staticFunctions = staticFunctions
-		this.viewObject = this.staticFunctions.createViewObject()
-		this.spinner = this.staticFunctions.createSpinner()
-		this.core = this.staticFunctions.createCore()
-
-		this.viewObject.addChild(this.spinner)
-		this.viewObject.addChild(this.core)
+		const objects = this.generateViewObjects()
+		this.viewObject = objects.viewObject
+		this.spinner = objects.spinner
+		this.core = objects.core
 
 		this.maxSide = Math.max(this.viewObject.width, this.viewObject.height)
 
@@ -104,6 +101,23 @@ export class LoadForTask<
 		this.spinner.destroy(true)
 		this.viewObject.destroy(true)
 		this.ticker.remove(this.tickerCallback)
+	}
+
+	protected generateViewObjects(): {
+		viewObject: ViewObjectLike
+		spinner: SpinnerLike
+		core: CoreLike
+	} {
+		const objects = {
+			core: this.staticFunctions.createCore(),
+			spinner: this.staticFunctions.createSpinner(),
+			viewObject: this.staticFunctions.createViewObject(),
+		}
+
+		objects.viewObject.addChild(objects.spinner)
+		objects.viewObject.addChild(objects.core)
+
+		return objects
 	}
 
 	protected init(resize: {
