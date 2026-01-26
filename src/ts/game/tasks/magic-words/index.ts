@@ -1,13 +1,21 @@
-import { Assets, Container } from 'pixi.js'
+import { Assets, Container, Ticker, type TickerCallback } from 'pixi.js'
 import { Data } from './data.js'
 import { Dialogue } from './dialogue/index.js'
 import { ErrorCatcher } from '../../error-catcher.js'
-import { LoadForTask } from '../load.js'
+import { LoadForTask } from '../load/index.js'
+import { staticFunctions } from '../load/static-fuctions.js'
 
 export class MagicWordsTask {
 	public readonly viewObject: Container
 	protected loadPromise?: Promise<void>
-	protected loadForTask?: LoadForTask
+	protected loadForTask?: LoadForTask<
+		ReturnType<(typeof staticFunctions)['createCore']>,
+		ReturnType<(typeof staticFunctions)['createSpinner']>,
+		ReturnType<(typeof staticFunctions)['createViewObject']>,
+		TickerCallback<Ticker>,
+		Ticker,
+		typeof staticFunctions
+	>
 	protected dialogue?: Dialogue<Data>
 	// We save this data because objects are created dynamically and need the value set immediately
 	protected lastResizeData?: {
@@ -92,13 +100,11 @@ export class MagicWordsTask {
 	}
 
 	protected displayLoading(): void {
-		this.loadForTask ??= new LoadForTask()
-		const noSize = 0
-		this.loadForTask.resize(
-			this.lastResizeData?.width ?? noSize,
-			this.lastResizeData?.height ?? noSize,
+		this.loadForTask ??= new LoadForTask(
+			staticFunctions,
+			this.lastResizeData ?? { height: 0, width: 0 },
+			Ticker.shared,
 		)
-		this.loadForTask.display()
 		this.viewObject.addChild(this.loadForTask.viewObject)
 	}
 
