@@ -4,9 +4,11 @@ export type TStaticLoadForTask<
 	ViewObjectLike,
 	TickerCallbackLike,
 > = {
-	readonly createViewObject: () => ViewObjectLike
-	readonly createCore: () => CoreLike
-	readonly createSpinner: () => SpinnerLike
+	readonly generateViewObjects: () => {
+		readonly core: CoreLike
+		readonly spinner: SpinnerLike
+		readonly viewObject: ViewObjectLike
+	}
 	readonly createTickFunction: (
 		spinner: SpinnerLike,
 		core: CoreLike,
@@ -53,7 +55,6 @@ export class LoadForTask<
 	protected readonly tickerCallback: TickerCallbackLike
 	protected readonly spinner: SpinnerLike
 	protected readonly core: CoreLike
-	protected readonly staticFunctions: StaticFunctionsLike
 	protected readonly maxSide: number
 	protected readonly ticker: TickerLike
 
@@ -63,15 +64,14 @@ export class LoadForTask<
 		ticker: TickerLike,
 	) {
 		this.ticker = ticker
-		this.staticFunctions = staticFunctions
-		const objects = this.generateViewObjects()
+		const objects = staticFunctions.generateViewObjects()
 		this.viewObject = objects.viewObject
 		this.spinner = objects.spinner
 		this.core = objects.core
 
 		this.maxSide = Math.max(this.viewObject.width, this.viewObject.height)
 
-		this.tickerCallback = this.staticFunctions.createTickFunction(
+		this.tickerCallback = staticFunctions.createTickFunction(
 			this.spinner,
 			this.core,
 		)
@@ -101,23 +101,6 @@ export class LoadForTask<
 		this.spinner.destroy(true)
 		this.viewObject.destroy(true)
 		this.ticker.remove(this.tickerCallback)
-	}
-
-	protected generateViewObjects(): {
-		viewObject: ViewObjectLike
-		spinner: SpinnerLike
-		core: CoreLike
-	} {
-		const objects = {
-			core: this.staticFunctions.createCore(),
-			spinner: this.staticFunctions.createSpinner(),
-			viewObject: this.staticFunctions.createViewObject(),
-		}
-
-		objects.viewObject.addChild(objects.spinner)
-		objects.viewObject.addChild(objects.core)
-
-		return objects
 	}
 
 	protected init(resize: {

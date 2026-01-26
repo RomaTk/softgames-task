@@ -38,4 +38,20 @@ export const staticFunctions = {
 	): TickerCallBack<SpinnerLike, CoreLike>['tickCallback'] =>
 		new TickerCallBack<SpinnerLike, CoreLike>(spinner, core).tickCallback,
 	createViewObject: (): Container => new Container(),
+	generateViewObjects(): {
+		viewObject: Container
+		spinner: Graphics
+		core: Graphics
+	} {
+		const objects = {
+			core: staticFunctions.createCore(),
+			spinner: staticFunctions.createSpinner(),
+			viewObject: staticFunctions.createViewObject(),
+		}
+
+		objects.viewObject.addChild(objects.spinner)
+		objects.viewObject.addChild(objects.core)
+
+		return objects
+	},
 }
