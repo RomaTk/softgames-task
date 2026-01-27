@@ -59,7 +59,7 @@ export class LoadForTask<
 			ViewObjectLike,
 			TickerCallbackLike
 		>,
-		resize: { readonly width: number; readonly height: number },
+		size: { readonly width: number; readonly height: number },
 		ticker: TickerLike,
 	) {
 		this.ticker = ticker
@@ -75,7 +75,7 @@ export class LoadForTask<
 			this.core,
 		)
 		this.isDestroyed = false
-		this.init(resize)
+		this.init(size)
 	}
 
 	public resize(width: number, height: number): void {
@@ -102,11 +102,11 @@ export class LoadForTask<
 		this.ticker.remove(this.tickerCallback)
 	}
 
-	protected init(resize: {
+	protected init(size: {
 		readonly width: number
 		readonly height: number
 	}): void {
-		this.resize(resize.width, resize.height)
+		this.resize(size.width, size.height)
 		this.ticker.add(this.tickerCallback)
 	}
 }

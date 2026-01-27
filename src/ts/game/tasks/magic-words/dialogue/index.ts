@@ -1,13 +1,28 @@
 import { LayoutContainer, ScrollSpring } from '@pixi/layout/components'
 import type { Data as DataFromEndpoint } from '../data.js'
 import { ErrorCatcher } from '../../../error-catcher.js'
-import { Message } from './message.js'
+import { Message } from './message/index.js'
+import { staticFunctions } from './message/static-functions.js'
+import { Texture } from 'pixi.js'
+import { Game } from '../../../index.js'
+
+export type TMessage = Message<
+	ReturnType<typeof staticFunctions.generateViewObject>,
+	ReturnType<typeof staticFunctions.generateMessageContainer>,
+	ReturnType<typeof staticFunctions.generateAuthorName>,
+	ReturnType<typeof staticFunctions.generateMessageText>,
+	ReturnType<typeof staticFunctions.generateAvatar>,
+	ReturnType<typeof staticFunctions.generateCornerRect>,
+	ReturnType<typeof staticFunctions.getSizeHelpers>,
+	ErrorCatcher,
+	Texture
+>
 
 // Take into account that this class can be used only after initialization of application with layout plugin
 export class Dialogue<Data extends DataFromEndpoint> {
 	public readonly viewObject: LayoutContainer
 	protected readonly data: Data
-	protected readonly messages: readonly Message[]
+	protected readonly messages: readonly TMessage[]
 	protected readonly scrollSpring: ScrollSpring
 
 	public constructor(data: Data) {
@@ -59,13 +74,6 @@ export class Dialogue<Data extends DataFromEndpoint> {
 			flexDirection: 'column',
 		}
 
-		await Promise.all(
-			this.messages.map(
-				async (message: { readonly display: () => Promise<void> }) =>
-					message.display(),
-			),
-		)
-
 		this.viewObject.alpha = 1
 	}
 
@@ -76,32 +84,50 @@ export class Dialogue<Data extends DataFromEndpoint> {
 		this.viewObject.destroy(true)
 	}
 
-	protected createMessages(): Message[] {
-		const messages: Message[] = []
+	protected createMessages(): TMessage[] {
+		const messages: TMessage[] = []
 		for (const messageData of this.data.dialogue) {
 			messages.push(this.createMessage(messageData))
 		}
 		return messages
 	}
 
+	protected createMapOfEmojis(): ReadonlyMap<string, string> {
+		const emojiesMap = new Map<string, string>()
+		this.data.emojies.forEach(
+			(data: {
+				readonly name: string
+				readonly base64?: string | undefined
+			}) => {
+				if (typeof data.base64 === 'undefined') {
+					return
+				}
+				emojiesMap.set(data.name, data.base64)
+			},
+		)
+		return emojiesMap
+	}
+
+	// eslint-disable-next-line max-lines-per-function
 	protected createMessage(messageData: {
 		readonly name: string
 		readonly text: string
-	}): Message {
+	}): TMessage {
 		const avatar = (():
-			| {
+				| {
+						readonly name: string
+						readonly position: 'left' | 'right'
+						readonly url: string
+				  }
+				| undefined => {
+				const avatars: readonly {
 					readonly name: string
 					readonly position: 'left' | 'right'
 					readonly url: string
-			  }
-			| undefined => {
-			const avatars: readonly {
-				readonly name: string
-				readonly position: 'left' | 'right'
-				readonly url: string
-			}[] = this.data.avatars
-			return avatars.find((av) => av.name === messageData.name)
-		})()
+				}[] = this.data.avatars
+				return avatars.find((av) => av.name === messageData.name)
+			})(),
+			mapEmojiToBase64 = this.createMapOfEmojis()
 
 		if (!avatar) {
 			try {
@@ -113,11 +139,24 @@ export class Dialogue<Data extends DataFromEndpoint> {
 			}
 		}
 
-		return new Message(
-			{
+		return new Message({
+			errorCatcher: ErrorCatcher.instance,
+			forceRender: (): void => {
+				Game.instance.application.renderer.render(
+					Game.instance.application.stage,
+				)
+			},
+			mapEmojiToBase64,
+			messageData: {
 				author: {
-					avatarUrl: avatar?.url ?? '',
 					name: messageData.name,
+					texture: ((): Texture => {
+						const url = avatar?.url
+						if (typeof url === 'undefined') {
+							return Texture.WHITE
+						}
+						return Texture.from(url)
+					})(),
 				},
 				position:
 					avatar?.position ??
@@ -130,7 +169,7 @@ export class Dialogue<Data extends DataFromEndpoint> {
 					})(),
 				text: messageData.text,
 			},
-			this.data,
-		)
+			staticFunctions,
+		})
 	}
 }
