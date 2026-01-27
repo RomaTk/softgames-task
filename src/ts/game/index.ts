@@ -31,7 +31,7 @@ export class Game {
 	public readonly errorCatcher: ErrorCatcher
 	protected loadPromise?: Promise<TLoadStatus>
 	protected fpsMeter?: FPSMeter
-	protected readonly application: Application
+	public readonly application: Application
 	protected readonly menu: Menu
 	protected readonly resizeObserver: OnTickResizeObserver
 	// Max size in pixels for width or height
@@ -39,7 +39,10 @@ export class Game {
 	protected readonly tasks: Set<TTask>
 	protected readonly tasksContainer: Pixi.Container
 
+	public static instance: Game
+
 	public constructor() {
+		Game.instance = this
 		this.errorCatcher = ErrorCatcher.instance
 		this.errorCatcher.actionOnError = (): void => {
 			const { parentElement } = this.application.canvas

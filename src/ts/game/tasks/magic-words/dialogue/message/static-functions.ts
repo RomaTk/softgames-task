@@ -47,8 +47,12 @@ export const staticFunctions = {
 				width: '75%',
 			},
 		}),
-	generateMessageText: (isWordWrap: boolean, text: string): LayoutHTMLText =>
-		new LayoutHTMLText({
+	generateMessageText: (
+		isWordWrap: boolean,
+		text: string,
+		setLayout = true,
+	): LayoutHTMLText => {
+		const object = new LayoutHTMLText({
 			style: {
 				fill: '#3495eb',
 				fontFamily: 'Arial',
@@ -57,12 +61,18 @@ export const staticFunctions = {
 				padding: 6,
 				stroke: '#1a4e7a',
 				wordWrap: isWordWrap,
+				cssOverrides: [`white-space: normal;`],
 			},
 			text,
-			layout: {
-				maxWidth: '100%',
-			},
-		}),
+		})
+		if (!setLayout) {
+			return object
+		}
+		object.layout = {
+			maxWidth: '100%',
+		}
+		return object
+	},
 	generateAvatar: (texture: Texture): LayoutSprite =>
 		new LayoutSprite({
 			layout: {

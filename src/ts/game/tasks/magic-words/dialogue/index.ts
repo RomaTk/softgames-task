@@ -13,9 +13,8 @@ export type TMessage = Message<
 	ReturnType<typeof staticFunctions.generateMessageText>,
 	ReturnType<typeof staticFunctions.generateAvatar>,
 	ReturnType<typeof staticFunctions.generateCornerRect>,
-	ReturnType<typeof staticFunctions.getSizeHelpers>,
-	ErrorCatcher,
-	Texture
+	Texture,
+	ReturnType<typeof staticFunctions.getSizeHelpers>
 >
 
 // Take into account that this class can be used only after initialization of application with layout plugin
@@ -140,8 +139,10 @@ export class Dialogue<Data extends DataFromEndpoint> {
 		}
 
 		return new Message({
-			errorCatcher: ErrorCatcher.instance,
 			forceRender: (): void => {
+				Game.instance.application.renderer.layout.update(
+					Game.instance.application.stage,
+				)
 				Game.instance.application.renderer.render(
 					Game.instance.application.stage,
 				)
@@ -170,6 +171,9 @@ export class Dialogue<Data extends DataFromEndpoint> {
 				text: messageData.text,
 			},
 			staticFunctions,
+			throwNotCritical: (err: unknown): void => {
+				ErrorCatcher.instance.throw(err, true)
+			},
 		})
 	}
 }
