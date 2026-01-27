@@ -61,7 +61,6 @@ export const staticFunctions = {
 				padding: 6,
 				stroke: '#1a4e7a',
 				wordWrap: isWordWrap,
-				cssOverrides: [`white-space: normal;`],
 			},
 			text,
 		})
