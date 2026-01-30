@@ -139,22 +139,6 @@ export class Message<
 		this.textLayoutFix()
 	}
 
-	protected getBatchableHTMLOfMessageText(): BatchableHTMLText | null {
-		const gpuData = ((): HTMLText['_gpuData'] => {
-				const key = '_gpuData'
-				return this.messageText[key]
-			})(),
-			interestingIndex = 0
-
-		return ((): BatchableHTMLText | null => {
-			const batchableHTMLText = gpuData[interestingIndex]
-			if (typeof batchableHTMLText === 'undefined') {
-				return null
-			}
-			return batchableHTMLText
-		})()
-	}
-
 	/*
 		After onRender, could be extracted the size of message container
 	 */
