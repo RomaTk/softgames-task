@@ -155,48 +155,6 @@ export class Message<
 		})()
 	}
 
-	protected waitForBatchableHTMLSatisfySize(
-		width: number,
-		height: number,
-	): void {
-		const batchableHTMLText = this.getBatchableHTMLOfMessageText()
-		if (!batchableHTMLText) {
-			this.messageText.onRender = () => {
-				this.messageText.onRender = null
-				this.waitForBatchableHTMLSatisfySize(width, height)
-			}
-			return
-		}
-
-		if (batchableHTMLText.generatingTexture) {
-			batchableHTMLText.texturePromise
-				.then(() => {
-					this.waitForBatchableHTMLSatisfySize(width, height)
-				})
-				.catch((err: unknown) => {
-					console.error('Error while generating texture:', err)
-				})
-		} else {
-			this.messageText.style.wordWrapWidth = width
-			this.messageText.layout = {
-				height: this.messageText.height,
-				width: this.messageText.width,
-			}
-			this.messageText.onRender = (renderer) => {
-				// this.messageText.layout = {
-				// 	width: this.messageText.width,
-				// }
-				this.messageText.onRender = null
-				console.log(
-					this.messageText.style.wordWrapWidth,
-					width,
-					this.messageText.layout?.realScaleX,
-					this.messageText.layout?.realScaleX,
-				)
-			}
-		}
-	}
-
 	/*
 		After onRender, could be extracted the size of message container
 	 */
