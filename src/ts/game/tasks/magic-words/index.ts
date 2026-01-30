@@ -165,6 +165,8 @@ export class MagicWordsTask {
 					Assets.load({
 						parser: 'texture',
 						src: avatar.url,
+					}).catch((err: unknown) => {
+						ErrorCatcher.instance.throw(err, true)
 					}),
 			),
 		)

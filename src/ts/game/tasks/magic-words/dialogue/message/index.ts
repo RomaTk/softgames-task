@@ -1,4 +1,14 @@
-import { Graphics, Texture } from 'pixi.js'
+/* eslint-disable max-statements */
+/* eslint-disable no-console */
+/* eslint-disable max-lines-per-function */
+import {
+	BatchableHTMLText,
+	Graphics,
+	HTMLText,
+	Rectangle,
+	Texture,
+	TextureSource,
+} from 'pixi.js'
 import {
 	LayoutContainer,
 	LayoutHTMLText,
@@ -10,7 +20,6 @@ import {
 	type TOptions as TOptionsWithoutHack,
 	type TStaticFunctions as TStaticFunctionsWithoutHack,
 } from './without-hack.js'
-import { gsap } from 'gsap'
 
 export type TSizeHelper = {
 	readonly width: number
@@ -81,7 +90,7 @@ export class Message<
 	ViewObjectLike extends LayoutContainer,
 	MessageContainerLike extends LayoutContainer,
 	AutorNameLike extends LayoutText,
-	MessageTextLike extends LayoutHTMLText,
+	MessageTextLike extends HTMLText,
 	AvatarLike extends LayoutSprite,
 	CornerRectLike extends Graphics,
 	TextureLike extends Texture,
@@ -122,57 +131,74 @@ export class Message<
 			opt.messageData.author.name,
 			htmlTextWithEmojies,
 		)
-		this.messageText.onRender = (): void => {
-			this.messageText.onRender = null
-			this.textLayoutFix(true)
-		}
+
+		this.textLayoutFix()
 	}
 
 	public resize(): void {
-		this.textLayoutFix(false)
+		this.textLayoutFix()
 	}
 
-	protected textLayoutFix(isInit: boolean): void {
-		// gsap.delayedCall(0.5, (): void => {
-		// 	console.log('On layout fired')
-		// 	// this.messageText.onRender = null
-		const paddinngMargin = 30,
-			saveHeight = 20
-		// Full size - size of text less then 100% width
-		if (
-			this.sizeHelpers.message.width + paddinngMargin <
-			this.messageContainer.width
-		) {
-			this.messageText.layout = {
-				height:
-					this.sizeHelpers.message.height +
-					saveHeight +
-					this.sizeHelpers.authorName.height,
-				width: this.sizeHelpers.message.width + paddinngMargin,
-			}
-		} else {
-			this.messageText.layout = {
-				width: '90%',
-			}
-			this.messageText.layout = {
-				height:
-					((this.sizeHelpers.message.width + paddinngMargin) /
-						this.messageContainer.width) *
-						this.sizeHelpers.message.height +
-					saveHeight +
-					this.sizeHelpers.authorName.height,
+	protected getBatchableHTMLOfMessageText(): BatchableHTMLText | null {
+		const gpuData = ((): HTMLText['_gpuData'] => {
+				const key = '_gpuData'
+				return this.messageText[key]
+			})(),
+			interestingIndex = 0
 
-				width: '100%',
+		return ((): BatchableHTMLText | null => {
+			const batchableHTMLText = gpuData[interestingIndex]
+			if (typeof batchableHTMLText === 'undefined') {
+				return null
+			}
+			return batchableHTMLText
+		})()
+	}
+
+	protected waitForBatchableHTMLSatisfySize(
+		width: number,
+		height: number,
+	): void {
+		const batchableHTMLText = this.getBatchableHTMLOfMessageText()
+		if (!batchableHTMLText) {
+			this.messageText.onRender = () => {
+				this.messageText.onRender = null
+				this.waitForBatchableHTMLSatisfySize(width, height)
+			}
+			return
+		}
+
+		if (batchableHTMLText.generatingTexture) {
+			batchableHTMLText.texturePromise
+				.then(() => {
+					this.waitForBatchableHTMLSatisfySize(width, height)
+				})
+				.catch((err: unknown) => {
+					console.error('Error while generating texture:', err)
+				})
+		} else {
+			this.messageText.style.wordWrapWidth = width
+			this.messageText.layout = {
+				height: this.messageText.height,
+				width: this.messageText.width,
+			}
+			this.messageText.onRender = (renderer) => {
+				// this.messageText.layout = {
+				// 	width: this.messageText.width,
+				// }
+				this.messageText.onRender = null
+				console.log(
+					this.messageText.style.wordWrapWidth,
+					width,
+					this.messageText.layout?.realScaleX,
+					this.messageText.layout?.realScaleX,
+				)
 			}
 		}
-		window.messageText = this.messageText
-		// this.messageContainer.onLayout = () => {
-		// 	console.log('message container layout done')
-		// }
-		// if (isInit) {
-		this.forceRender()
-		// }
-		// this.textLayoutFix(false)
-		// })
 	}
+
+	/*
+		After onRender, could be extracted the size of message container
+	 */
+	protected textLayoutFix(): void {}
 }

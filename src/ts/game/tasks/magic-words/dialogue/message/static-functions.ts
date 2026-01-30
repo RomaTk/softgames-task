@@ -4,7 +4,7 @@ import {
 	LayoutSprite,
 	LayoutText,
 } from '@pixi/layout/components'
-import { Graphics, Texture } from 'pixi.js'
+import { Graphics, HTMLText, Texture } from 'pixi.js'
 import { TSizeHelper, TSizeHelpers } from './index.js'
 import { generateHtmlTextWithImages } from './text-with-images.js'
 
@@ -51,8 +51,8 @@ export const staticFunctions = {
 		isWordWrap: boolean,
 		text: string,
 		setLayout = true,
-	): LayoutHTMLText => {
-		const object = new LayoutHTMLText({
+	): HTMLText => {
+		const object = new HTMLText({
 			style: {
 				fill: '#3495eb',
 				fontFamily: 'Arial',
@@ -68,6 +68,8 @@ export const staticFunctions = {
 			return object
 		}
 		object.layout = {
+			objectFit: 'contain',
+			width: '100%',
 			maxWidth: '100%',
 		}
 		return object

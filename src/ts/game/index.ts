@@ -43,6 +43,12 @@ export class Game {
 
 	public constructor() {
 		Game.instance = this
+		window.game = this
+		window.test = () => {
+			return this.application.renderer.htmlText.getManagedTexture(
+				window.messageText,
+			)
+		}
 		this.errorCatcher = ErrorCatcher.instance
 		this.errorCatcher.actionOnError = (): void => {
 			const { parentElement } = this.application.canvas

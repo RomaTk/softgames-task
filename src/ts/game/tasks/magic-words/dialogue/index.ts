@@ -85,9 +85,11 @@ export class Dialogue<Data extends DataFromEndpoint> {
 
 	protected createMessages(): TMessage[] {
 		const messages: TMessage[] = []
+		// messages.push(this.createMessage(this.data.dialogue[0]))
 		for (const messageData of this.data.dialogue) {
 			messages.push(this.createMessage(messageData))
 		}
+		window.messages = messages
 		return messages
 	}
 

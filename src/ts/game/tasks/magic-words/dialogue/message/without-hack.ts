@@ -1,4 +1,4 @@
-import type { Graphics, Texture } from 'pixi.js'
+import type { Graphics, HTMLText, Texture } from 'pixi.js'
 import type {
 	LayoutContainer,
 	LayoutHTMLText,
@@ -78,7 +78,7 @@ export class MessageWithoutHack<
 	ViewObjectLike extends LayoutContainer,
 	MessageContainerLike extends LayoutContainer,
 	AutorNameLike extends LayoutText,
-	MessageTextLike extends LayoutHTMLText,
+	MessageTextLike extends HTMLText,
 	AvatarLike extends LayoutSprite,
 	CornerRectLike extends Graphics,
 	TextureLike extends Texture,
