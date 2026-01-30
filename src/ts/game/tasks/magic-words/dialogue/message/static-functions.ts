@@ -67,12 +67,16 @@ export const staticFunctions = {
 		if (!setLayout) {
 			return object
 		}
-		object.layout = {
-			objectFit: 'contain',
-			width: '100%',
-			maxWidth: '100%',
-		}
+		object.layout = false
 		return object
+	},
+	generateMessageTextSpace: (): LayoutContainer => {
+		return new LayoutSprite({
+			layout: {
+				width: '100%',
+				height: 20,
+			},
+		})
 	},
 	generateAvatar: (texture: Texture): LayoutSprite =>
 		new LayoutSprite({

@@ -142,5 +142,16 @@ export class Message<
 	/*
 		After onRender, could be extracted the size of message container
 	 */
-	protected textLayoutFix(): void {}
+	protected textLayoutFix(): void {
+		this.messageSpace.onRender = () => {
+			// this.messageSpace.onRender = null
+			this.messageText.y = this.messageSpace.layout?.realY
+			this.messageText.x = this.messageSpace.layout?.realX
+			this.messageText.style.wordWrapWidth = this.messageSpace.width
+			this.messageSpace.layout = {
+				height: this.messageText.height,
+				width: '100%',
+			}
+		}
+	}
 }

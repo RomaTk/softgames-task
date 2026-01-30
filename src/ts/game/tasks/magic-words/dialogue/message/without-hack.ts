@@ -38,6 +38,7 @@ export type TStaticFunctions<
 	readonly generateAvatar: (texture: TextureLike) => AvatarLike
 	readonly generateCornerRect: (position: 'left' | 'right') => CornerRectLike
 	readonly generateMessageContainer: () => MessageContainerLike
+	readonly generateMessageTextSpace: () => LayoutContainer
 	readonly generateHtmlTextWithImages: (
 		text: string,
 		emojies: ReadonlyMap<string, string>,
@@ -89,6 +90,7 @@ export class MessageWithoutHack<
 	protected readonly messageText: MessageTextLike
 	protected readonly authorAvatar: AvatarLike
 	protected readonly messageContainer: MessageContainerLike
+	protected readonly messageSpace: LayoutContainer
 	// HACK to cover the sharp corner of the message container
 	protected readonly cornerRect: CornerRectLike
 
@@ -127,7 +129,9 @@ export class MessageWithoutHack<
 		this.cornerRect = opt.staticFunctions.generateCornerRect(
 			opt.messageData.position,
 		)
+
 		this.messageContainer = opt.staticFunctions.generateMessageContainer()
+		this.messageSpace = opt.staticFunctions.generateMessageTextSpace()
 
 		this.init()
 	}
@@ -149,6 +153,7 @@ export class MessageWithoutHack<
 		this.messageContainer.addChild(
 			this.cornerRect,
 			this.authorName,
+			this.messageSpace,
 			this.messageText,
 		)
 		this.viewObject.addChild(this.authorAvatar)
