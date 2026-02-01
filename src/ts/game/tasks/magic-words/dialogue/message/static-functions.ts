@@ -1,12 +1,12 @@
 import {
 	LayoutContainer,
-	LayoutHTMLText,
 	LayoutSprite,
 	LayoutText,
 } from '@pixi/layout/components'
 import { Graphics, HTMLText, Texture } from 'pixi.js'
 import { TSizeHelper, TSizeHelpers } from './index.js'
 import { generateHtmlTextWithImages } from './text-with-images.js'
+import { MessageText } from './message-text/index.js'
 
 export const staticFunctions = {
 	generateAuthorName: (name: string): LayoutText => {
@@ -47,37 +47,21 @@ export const staticFunctions = {
 				width: '75%',
 			},
 		}),
-	generateMessageText: (
-		isWordWrap: boolean,
-		text: string,
-		setLayout = true,
-	): HTMLText => {
-		const object = new HTMLText({
-			style: {
-				fill: '#3495eb',
-				fontFamily: 'Arial',
-				fontSize: 22,
-				fontWeight: 'bold',
-				padding: 6,
-				stroke: '#1a4e7a',
-				wordWrap: isWordWrap,
-			},
-			text,
-		})
-		if (!setLayout) {
-			return object
-		}
-		object.layout = false
-		return object
-	},
-	generateMessageTextSpace: (): LayoutContainer => {
-		return new LayoutSprite({
-			layout: {
-				width: '100%',
-				height: 20,
-			},
-		})
-	},
+	generateMessageText: (text: string): MessageText<HTMLText> =>
+		new MessageText(
+			new HTMLText({
+				style: {
+					fill: '#3495eb',
+					fontFamily: 'Arial',
+					fontSize: 22,
+					fontWeight: 'bold',
+					padding: 6,
+					stroke: '#1a4e7a',
+					wordWrap: false,
+				},
+				text,
+			}),
+		),
 	generateAvatar: (texture: Texture): LayoutSprite =>
 		new LayoutSprite({
 			layout: {

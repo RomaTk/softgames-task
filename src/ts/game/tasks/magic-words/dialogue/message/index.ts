@@ -1,30 +1,31 @@
-/* eslint-disable max-statements */
-/* eslint-disable no-console */
-/* eslint-disable max-lines-per-function */
-import {
-	BatchableHTMLText,
-	Graphics,
-	HTMLText,
-	Rectangle,
-	Texture,
-	TextureSource,
-} from 'pixi.js'
-import {
-	LayoutContainer,
-	LayoutHTMLText,
-	LayoutSprite,
-	LayoutText,
-} from '@pixi/layout/components'
-import {
-	MessageWithoutHack,
-	type TOptions as TOptionsWithoutHack,
-	type TStaticFunctions as TStaticFunctionsWithoutHack,
-} from './without-hack.js'
+export type TMessageOptions<TextureLike> = {
+	readonly author: {
+		readonly name: string
+		readonly texture: TextureLike
+	}
+	readonly text: string
+	readonly position: 'left' | 'right'
+}
 
 export type TSizeHelper = {
 	readonly width: number
 	readonly height: number
 }
+
+export type TViewWithChildren<ChildrenLike> = {
+	readonly addChild: (...children: readonly ChildrenLike[]) => void
+}
+
+export type TViewDestroyable = {
+	readonly destroy: (options: true) => void
+}
+export type TViewDestroyableNoOptions = {
+	readonly destroy: () => void
+}
+
+export type TMessageLike = {
+	readonly resize: () => void
+} & TViewDestroyableNoOptions
 
 export type TStaticFunctions<
 	ViewObjectLike,
@@ -34,21 +35,19 @@ export type TStaticFunctions<
 	CornerRectLike,
 	MessageContainerLike,
 	TextureLike,
-	SizeHelpersLike,
 > = {
-	readonly getSizeHelpers: (
-		authorName: string,
-		messageText: string,
-	) => SizeHelpersLike
-} & TStaticFunctionsWithoutHack<
-	ViewObjectLike,
-	AutorNameLike,
-	MessageTextLike,
-	AvatarLike,
-	CornerRectLike,
-	MessageContainerLike,
-	TextureLike
->
+	readonly generateViewObject: (position: 'left' | 'right') => ViewObjectLike
+	readonly generateAuthorName: (name: string) => AutorNameLike
+	readonly generateMessageText: (text: string) => MessageTextLike
+	readonly generateAvatar: (texture: TextureLike) => AvatarLike
+	readonly generateCornerRect: (position: 'left' | 'right') => CornerRectLike
+	readonly generateMessageContainer: () => MessageContainerLike
+	readonly generateHtmlTextWithImages: (
+		text: string,
+		emojies: ReadonlyMap<string, string>,
+		throwNotCritical: (err: unknown) => void,
+	) => string
+}
 
 export type TSizeHelpers = {
 	readonly authorName: TSizeHelper
@@ -63,7 +62,6 @@ export type TOptions<
 	CornerRectLike,
 	MessageContainerLike,
 	TextureLike,
-	SizeHelpersLike,
 > = {
 	readonly staticFunctions: TStaticFunctions<
 		ViewObjectLike,
@@ -72,40 +70,37 @@ export type TOptions<
 		AvatarLike,
 		CornerRectLike,
 		MessageContainerLike,
-		TextureLike,
-		SizeHelpersLike
+		TextureLike
 	>
-	readonly forceRender: () => void
-} & TOptionsWithoutHack<
-	ViewObjectLike,
-	AutorNameLike,
-	MessageTextLike,
-	AvatarLike,
-	CornerRectLike,
-	MessageContainerLike,
-	TextureLike
->
+	readonly messageData: TMessageOptions<TextureLike>
+	readonly mapEmojiToBase64: ReadonlyMap<string, string>
+	readonly throwNotCritical: (err: unknown) => void
+	readonly htmlTextWithEmojies?: string
+}
 
 export class Message<
-	ViewObjectLike extends LayoutContainer,
-	MessageContainerLike extends LayoutContainer,
-	AutorNameLike extends LayoutText,
-	MessageTextLike extends HTMLText,
-	AvatarLike extends LayoutSprite,
-	CornerRectLike extends Graphics,
-	TextureLike extends Texture,
-	SizeHelpersLike extends TSizeHelpers,
-> extends MessageWithoutHack<
-	ViewObjectLike,
-	MessageContainerLike,
-	AutorNameLike,
-	MessageTextLike,
-	AvatarLike,
-	CornerRectLike,
-	TextureLike
+	ViewObjectLike extends TViewWithChildren<
+		AvatarLike | MessageContainerLike
+	> &
+		TViewDestroyable,
+	MessageContainerLike extends TViewWithChildren<
+		CornerRectLike | AutorNameLike | MessageTextLike
+	> &
+		TViewDestroyable,
+	AutorNameLike extends TViewDestroyable,
+	MessageTextLike extends TMessageLike,
+	AvatarLike extends TViewDestroyableNoOptions,
+	CornerRectLike extends TViewDestroyable,
+	TextureLike extends TViewDestroyable,
 > {
-	protected readonly sizeHelpers: SizeHelpersLike
-	protected readonly forceRender: () => void
+	public readonly viewObject: ViewObjectLike
+	protected isDestroyed: boolean
+	protected readonly authorName: AutorNameLike
+	protected readonly messageText: MessageTextLike
+	protected readonly authorAvatar: AvatarLike
+	protected readonly messageContainer: MessageContainerLike
+	// HACK to cover the sharp corner of the message container
+	protected readonly cornerRect: CornerRectLike
 
 	public constructor(
 		opt: TOptions<
@@ -115,72 +110,60 @@ export class Message<
 			AvatarLike,
 			CornerRectLike,
 			MessageContainerLike,
-			TextureLike,
-			SizeHelpersLike
+			TextureLike
 		>,
 	) {
+		this.isDestroyed = false
 		const htmlTextWithEmojies =
+			opt.htmlTextWithEmojies ??
 			opt.staticFunctions.generateHtmlTextWithImages(
 				opt.messageData.text,
 				opt.mapEmojiToBase64,
 				opt.throwNotCritical,
 			)
-		super({ ...opt, htmlTextWithEmojies })
-		this.forceRender = opt.forceRender
-		this.sizeHelpers = opt.staticFunctions.getSizeHelpers(
+		this.viewObject = opt.staticFunctions.generateViewObject(
+			opt.messageData.position,
+		)
+		this.authorName = opt.staticFunctions.generateAuthorName(
 			opt.messageData.author.name,
-			htmlTextWithEmojies,
+		)
+		this.messageText =
+			opt.staticFunctions.generateMessageText(htmlTextWithEmojies)
+		this.authorAvatar = opt.staticFunctions.generateAvatar(
+			opt.messageData.author.texture,
+		)
+		this.cornerRect = opt.staticFunctions.generateCornerRect(
+			opt.messageData.position,
 		)
 
-		this.textLayoutFix()
+		this.messageContainer = opt.staticFunctions.generateMessageContainer()
+
+		this.init()
 	}
 
 	public resize(): void {
-		this.textLayoutFix()
+		this.messageText.resize()
 	}
 
-	/*
-		After onRender, could be extracted the size of message container
-	 */
-	protected textLayoutFix(): void {
-		// let renderTime = 0
-		this.messageSpace.onRender = (renderer) => {
-			this.messageSpace.onRender = null
-			this.messageSpace.onLayout = () => {
-				this.messageSpace.onLayout = null
-				this.messageText.y = this.messageSpace.layout?.realY
-				this.messageText.x = this.messageSpace.layout?.realX
-				this.messageText._gpuData[0]?.texturePromise.then(() => {
-					this.messageText.style.wordWrapWidth =
-						this.messageSpace.width
-					this.messageSpace.layout = {
-						height: this.messageText.height,
-					}
-					console.log(
-						'Message text height: ',
-						this.messageText.height,
-					)
-				})
-			}
-			this.messageSpace.layout?.forceUpdate()
+	public destroy(): void {
+		if (this.isDestroyed) {
+			return
 		}
-		// this.viewObject.onRender = () => {
-		// 	this.viewObject.onRender = null
-		// 	this.messageText.style.wordWrapWidth = this.messageSpace.width
-		// 	console.log(
-		// 		'Position: ',
-		// 		this.messageSpace.layout?.realX,
-		// 		this.messageSpace.layout?.realY,
-		// 	)
-		// 	console.log(
-		// 		'Width: ',
-		// 		this.messageSpace.width,
-		// 		this.messageText.style.wordWrapWidth,
-		// 	)
-		// 	this.messageSpace.layout = {
-		// 		height: this.messageText.height,
-		// 		width: '100%',
-		// 	}
-		// }
+		this.isDestroyed = true
+		this.cornerRect.destroy(true)
+		this.authorName.destroy(true)
+		this.authorAvatar.destroy()
+		this.messageText.destroy()
+		this.messageContainer.destroy(true)
+		this.viewObject.destroy(true)
+	}
+
+	protected init(): void {
+		this.messageContainer.addChild(
+			this.cornerRect,
+			this.authorName,
+			this.messageText,
+		)
+		this.viewObject.addChild(this.authorAvatar, this.messageContainer)
 	}
 }

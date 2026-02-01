@@ -4,7 +4,6 @@ import { ErrorCatcher } from '../../../error-catcher.js'
 import { Message } from './message/index.js'
 import { staticFunctions } from './message/static-functions.js'
 import { Texture } from 'pixi.js'
-import { Game } from '../../../index.js'
 
 export type TMessage = Message<
 	ReturnType<typeof staticFunctions.generateViewObject>,
@@ -13,8 +12,7 @@ export type TMessage = Message<
 	ReturnType<typeof staticFunctions.generateMessageText>,
 	ReturnType<typeof staticFunctions.generateAvatar>,
 	ReturnType<typeof staticFunctions.generateCornerRect>,
-	Texture,
-	ReturnType<typeof staticFunctions.getSizeHelpers>
+	Texture
 >
 
 // Take into account that this class can be used only after initialization of application with layout plugin
@@ -141,14 +139,6 @@ export class Dialogue<Data extends DataFromEndpoint> {
 		}
 
 		return new Message({
-			forceRender: (): void => {
-				Game.instance.application.renderer.layout.update(
-					Game.instance.application.stage,
-				)
-				Game.instance.application.renderer.render(
-					Game.instance.application.stage,
-				)
-			},
 			mapEmojiToBase64,
 			messageData: {
 				author: {
