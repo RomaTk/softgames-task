@@ -143,15 +143,44 @@ export class Message<
 		After onRender, could be extracted the size of message container
 	 */
 	protected textLayoutFix(): void {
-		this.messageSpace.onRender = () => {
-			// this.messageSpace.onRender = null
-			this.messageText.y = this.messageSpace.layout?.realY
-			this.messageText.x = this.messageSpace.layout?.realX
-			this.messageText.style.wordWrapWidth = this.messageSpace.width
-			this.messageSpace.layout = {
-				height: this.messageText.height,
-				width: '100%',
+		// let renderTime = 0
+		this.messageSpace.onRender = (renderer) => {
+			this.messageSpace.onRender = null
+			this.messageSpace.onLayout = () => {
+				this.messageSpace.onLayout = null
+				this.messageText.y = this.messageSpace.layout?.realY
+				this.messageText.x = this.messageSpace.layout?.realX
+				this.messageText._gpuData[0]?.texturePromise.then(() => {
+					this.messageText.style.wordWrapWidth =
+						this.messageSpace.width
+					this.messageSpace.layout = {
+						height: this.messageText.height,
+					}
+					console.log(
+						'Message text height: ',
+						this.messageText.height,
+					)
+				})
 			}
+			this.messageSpace.layout?.forceUpdate()
 		}
+		// this.viewObject.onRender = () => {
+		// 	this.viewObject.onRender = null
+		// 	this.messageText.style.wordWrapWidth = this.messageSpace.width
+		// 	console.log(
+		// 		'Position: ',
+		// 		this.messageSpace.layout?.realX,
+		// 		this.messageSpace.layout?.realY,
+		// 	)
+		// 	console.log(
+		// 		'Width: ',
+		// 		this.messageSpace.width,
+		// 		this.messageText.style.wordWrapWidth,
+		// 	)
+		// 	this.messageSpace.layout = {
+		// 		height: this.messageText.height,
+		// 		width: '100%',
+		// 	}
+		// }
 	}
 }
