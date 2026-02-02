@@ -108,7 +108,6 @@ export class Dialogue<Data extends DataFromEndpoint> {
 		for (const messageData of this.data.dialogue) {
 			messages.push(this.createMessage(messageData))
 		}
-		window.messages = messages
 		return messages
 	}
 
