@@ -2,20 +2,40 @@ import { LayoutContainer, ScrollSpring } from '@pixi/layout/components'
 import type { Data as DataFromEndpoint } from '../data.js'
 import { ErrorCatcher } from '../../../error-catcher.js'
 import { Message } from './message/index.js'
-import { staticFunctions } from './message/static-functions.js'
+import { getGrouppedStaticFunctions } from './message/static-functions/index.js'
 import { Texture } from 'pixi.js'
-import { Game } from '../../../index.js'
+import { PreciseSizeHelper } from './message/message-text/precise-size-helper/index.js'
+import { styleContentParser } from './message/message-text/precise-size-helper/style-content-parser.js'
+import { PreciseSizeHelperCache } from './message/message-text/precise-size-helper/cache.js'
 
 export type TMessage = Message<
-	ReturnType<typeof staticFunctions.generateViewObject>,
-	ReturnType<typeof staticFunctions.generateMessageContainer>,
-	ReturnType<typeof staticFunctions.generateAuthorName>,
-	ReturnType<typeof staticFunctions.generateMessageText>,
-	ReturnType<typeof staticFunctions.generateAvatar>,
-	ReturnType<typeof staticFunctions.generateCornerRect>,
-	Texture,
-	ReturnType<typeof staticFunctions.getSizeHelpers>
+	ReturnType<
+		ReturnType<typeof getGrouppedStaticFunctions>['create']['viewObject']
+	>,
+	ReturnType<
+		ReturnType<
+			typeof getGrouppedStaticFunctions
+		>['create']['messageContainer']
+	>,
+	ReturnType<
+		ReturnType<typeof getGrouppedStaticFunctions>['create']['authorName']
+	>,
+	ReturnType<
+		ReturnType<typeof getGrouppedStaticFunctions>['create']['messageText']
+	>,
+	ReturnType<
+		ReturnType<typeof getGrouppedStaticFunctions>['create']['avatar']
+	>,
+	ReturnType<
+		ReturnType<typeof getGrouppedStaticFunctions>['create']['cornerRect']
+	>,
+	Texture
 >
+
+const preciseHelper = new PreciseSizeHelper(
+	styleContentParser,
+	new PreciseSizeHelperCache<DOMRect>(10),
+)
 
 // Take into account that this class can be used only after initialization of application with layout plugin
 export class Dialogue<Data extends DataFromEndpoint> {
@@ -85,7 +105,6 @@ export class Dialogue<Data extends DataFromEndpoint> {
 
 	protected createMessages(): TMessage[] {
 		const messages: TMessage[] = []
-		// messages.push(this.createMessage(this.data.dialogue[0]))
 		for (const messageData of this.data.dialogue) {
 			messages.push(this.createMessage(messageData))
 		}
@@ -141,14 +160,6 @@ export class Dialogue<Data extends DataFromEndpoint> {
 		}
 
 		return new Message({
-			forceRender: (): void => {
-				Game.instance.application.renderer.layout.update(
-					Game.instance.application.stage,
-				)
-				Game.instance.application.renderer.render(
-					Game.instance.application.stage,
-				)
-			},
 			mapEmojiToBase64,
 			messageData: {
 				author: {
@@ -172,7 +183,7 @@ export class Dialogue<Data extends DataFromEndpoint> {
 					})(),
 				text: messageData.text,
 			},
-			staticFunctions,
+			staticFunctions: getGrouppedStaticFunctions(preciseHelper),
 			throwNotCritical: (err: unknown): void => {
 				ErrorCatcher.instance.throw(err, true)
 			},
