@@ -1,8 +1,10 @@
+/* eslint-disable max-statements */
 /* eslint-disable max-lines-per-function */
 /* eslint-disable one-var */
 import { LayoutContainer, LayoutSprite } from '@pixi/layout/components'
-import { HTMLTextStyle, measureHtmlText, type HTMLText } from 'pixi.js'
-import { getPreciseHTMLTextWidth } from './size-helper.js'
+import type { HTMLText } from 'pixi.js'
+import { PreciseSizeHelper } from './precise-size-helper/index.js'
+import { styleContentParser } from './precise-size-helper/style-content-parser.js'
 
 export type BatchableHTMLTextLike<HTMLTextLike extends HTMLText> =
 	HTMLTextLike['_gpuData'][number]
@@ -17,6 +19,9 @@ export class MessageText<
 	// The actual text message
 	protected readonly text: HTMLTextLike
 	protected readonly defaultWidth: number
+	protected readonly presiseSizeHelper: PreciseSizeHelper
+	protected isResizingStarted: boolean
+	protected isResizeAgainNeeded: boolean
 
 	public constructor(text: HTMLTextLike) {
 		super()
@@ -29,12 +34,19 @@ export class MessageText<
 				width: Math.ceil(this.defaultWidth),
 			},
 		})
+		this.presiseSizeHelper = new PreciseSizeHelper(styleContentParser, 10)
 		this.addChild(this.space)
 		this.addChild(this.text)
 		this.resize()
 	}
 
 	public resize(): void {
+		if (this.isResizingStarted) {
+			this.isResizeAgainNeeded = true
+			return
+		}
+		this.isResizeAgainNeeded = false
+		this.isResizingStarted = true
 		this.space.layout = {
 			width: '100%',
 		}
@@ -62,17 +74,27 @@ export class MessageText<
 							}
 						} else {
 							this.text.style.wordWrap = true
-							const preciseWidth = getPreciseHTMLTextWidth(
-								this.text,
-								this.space.width,
-							)
 							this.text.style.wordWrapWidth = this.space.width
+							const preciseWidth =
+								this.presiseSizeHelper.getBoundingClientRect(
+									this.text,
+								).width
 							this.space.layout = {
 								width: preciseWidth,
 							}
+							console.log(
+								'Precise width:',
+								preciseWidth,
+								this.space.width,
+								this.text.style.wordWrapWidth,
+							)
 						}
 						this.space.layout = {
 							height: this.text.height,
+						}
+						this.isResizingStarted = false
+						if (this.isResizeAgainNeeded) {
+							this.resize()
 						}
 					})
 					.catch((err: unknown) => {
