@@ -4,6 +4,9 @@ import { ErrorCatcher } from '../../../error-catcher.js'
 import { Message } from './message/index.js'
 import { staticFunctions } from './message/static-functions.js'
 import { Texture } from 'pixi.js'
+import { PreciseSizeHelper } from './message/message-text/precise-size-helper/index.js'
+import { styleContentParser } from './message/message-text/precise-size-helper/style-content-parser.js'
+import { PreciseSizeHelperCache } from './message/message-text/precise-size-helper/cache.js'
 
 export type TMessage = Message<
 	ReturnType<typeof staticFunctions.generateViewObject>,
@@ -14,6 +17,11 @@ export type TMessage = Message<
 	ReturnType<typeof staticFunctions.generateCornerRect>,
 	Texture
 >
+
+const preciseHelper = new PreciseSizeHelper(
+	styleContentParser,
+	new PreciseSizeHelperCache<DOMRect>(10),
+)
 
 // Take into account that this class can be used only after initialization of application with layout plugin
 export class Dialogue<Data extends DataFromEndpoint> {
@@ -161,7 +169,11 @@ export class Dialogue<Data extends DataFromEndpoint> {
 					})(),
 				text: messageData.text,
 			},
-			staticFunctions,
+			staticFunctions: {
+				...staticFunctions,
+				generateMessageText: (text) =>
+					staticFunctions.generateMessageText(text, preciseHelper),
+			},
 			throwNotCritical: (err: unknown): void => {
 				ErrorCatcher.instance.throw(err, true)
 			},

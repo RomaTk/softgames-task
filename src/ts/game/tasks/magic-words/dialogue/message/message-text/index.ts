@@ -3,30 +3,34 @@
 /* eslint-disable one-var */
 import { LayoutContainer, LayoutSprite } from '@pixi/layout/components'
 import type { HTMLText } from 'pixi.js'
-import { PreciseSizeHelper } from './precise-size-helper/index.js'
-import { styleContentParser } from './precise-size-helper/style-content-parser.js'
-import { PreciseSizeHelperCache } from './precise-size-helper/cache.js'
 
-export type BatchableHTMLTextLike<HTMLTextLike extends HTMLText> =
+export type TBatchableHTMLText<HTMLTextLike extends HTMLText> =
 	HTMLTextLike['_gpuData'][number]
+
+export type TPreciseSizeHelper<HTMLTextLike> = {
+	readonly getBoundingClientRect: (htmlText: HTMLTextLike) => DOMRect
+}
 
 // This is a specific class to wrap HTMLText to be used in layout container
 // There are problems with using HTMLText directly in layout container because of the way layout plugin calculates space for the text + HTMLText rendering flow
 export class MessageText<
 	HTMLTextLike extends HTMLText,
+	PreciseSizeHelperLike extends TPreciseSizeHelper<HTMLTextLike>,
 > extends LayoutContainer {
 	// Used to set layout space for the text
 	protected readonly space: LayoutSprite
 	// The actual text message
 	protected readonly text: HTMLTextLike
 	protected readonly defaultWidth: number
-	protected readonly presiseSizeHelper: PreciseSizeHelper<
-		PreciseSizeHelperCache<DOMRect>
-	>
+	protected readonly presiseSizeHelper: PreciseSizeHelperLike
+
 	protected isResizingStarted: boolean
 	protected isResizeAgainNeeded: boolean
 
-	public constructor(text: HTMLTextLike) {
+	public constructor(
+		text: HTMLTextLike,
+		presiseSizeHelper: PreciseSizeHelperLike,
+	) {
 		super()
 		this.text = text
 		this.defaultWidth = this.text.width
@@ -37,10 +41,7 @@ export class MessageText<
 				width: Math.ceil(this.defaultWidth),
 			},
 		})
-		this.presiseSizeHelper = new PreciseSizeHelper(
-			styleContentParser,
-			new PreciseSizeHelperCache<DOMRect>(10),
-		)
+		this.presiseSizeHelper = presiseSizeHelper
 		this.addChild(this.space)
 		this.addChild(this.text)
 		this.resize()
@@ -88,12 +89,6 @@ export class MessageText<
 							this.space.layout = {
 								width: preciseWidth,
 							}
-							console.log(
-								'Precise width:',
-								preciseWidth,
-								this.space.width,
-								this.text.style.wordWrapWidth,
-							)
 						}
 						this.space.layout = {
 							height: this.text.height,
@@ -111,16 +106,16 @@ export class MessageText<
 		}
 	}
 
-	protected getBatchableHTMLOfMessageText(): BatchableHTMLTextLike<HTMLTextLike> | null {
+	protected getBatchableHTMLOfMessageText(): TBatchableHTMLText<HTMLTextLike> | null {
 		const gpuData = ((): HTMLTextLike['_gpuData'] => {
 				const key = '_gpuData'
 				return this.text[key]
 			})(),
 			interestingIndex = 0
 
-		return ((): BatchableHTMLTextLike<HTMLTextLike> | null => {
+		return ((): TBatchableHTMLText<HTMLTextLike> | null => {
 			const batchableHTMLText:
-				| BatchableHTMLTextLike<HTMLTextLike>
+				| TBatchableHTMLText<HTMLTextLike>
 				| undefined = gpuData[interestingIndex]
 			if (typeof batchableHTMLText === 'undefined') {
 				return null

@@ -6,7 +6,7 @@ import {
 import { Graphics, HTMLText, Texture } from 'pixi.js'
 import { TSizeHelper, TSizeHelpers } from './index.js'
 import { generateHtmlTextWithImages } from './text-with-images.js'
-import { MessageText } from './message-text/index.js'
+import { MessageText, TPreciseSizeHelper } from './message-text/index.js'
 
 export const staticFunctions = {
 	generateAuthorName: (name: string): LayoutText => {
@@ -48,8 +48,11 @@ export const staticFunctions = {
 				alignItems: 'center',
 			},
 		}),
-	generateMessageText: (text: string): MessageText<HTMLText> =>
-		new MessageText(
+	generateMessageText: (
+		text: string,
+		presiseSizeHelper: TPreciseSizeHelper<HTMLText>,
+	): MessageText<HTMLText, TPreciseSizeHelper<HTMLText>> =>
+		new MessageText<HTMLText, TPreciseSizeHelper<HTMLText>>(
 			new HTMLText({
 				style: {
 					fill: '#3495eb',
@@ -62,6 +65,7 @@ export const staticFunctions = {
 				},
 				text,
 			}),
+			presiseSizeHelper,
 		),
 	generateAvatar: (texture: Texture): LayoutSprite =>
 		new LayoutSprite({
