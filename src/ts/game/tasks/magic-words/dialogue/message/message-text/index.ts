@@ -5,6 +5,7 @@ import { LayoutContainer, LayoutSprite } from '@pixi/layout/components'
 import type { HTMLText } from 'pixi.js'
 import { PreciseSizeHelper } from './precise-size-helper/index.js'
 import { styleContentParser } from './precise-size-helper/style-content-parser.js'
+import { PreciseSizeHelperCache } from './precise-size-helper/cache.js'
 
 export type BatchableHTMLTextLike<HTMLTextLike extends HTMLText> =
 	HTMLTextLike['_gpuData'][number]
@@ -19,7 +20,9 @@ export class MessageText<
 	// The actual text message
 	protected readonly text: HTMLTextLike
 	protected readonly defaultWidth: number
-	protected readonly presiseSizeHelper: PreciseSizeHelper
+	protected readonly presiseSizeHelper: PreciseSizeHelper<
+		PreciseSizeHelperCache<DOMRect>
+	>
 	protected isResizingStarted: boolean
 	protected isResizeAgainNeeded: boolean
 
@@ -34,7 +37,10 @@ export class MessageText<
 				width: Math.ceil(this.defaultWidth),
 			},
 		})
-		this.presiseSizeHelper = new PreciseSizeHelper(styleContentParser, 10)
+		this.presiseSizeHelper = new PreciseSizeHelper(
+			styleContentParser,
+			new PreciseSizeHelperCache<DOMRect>(10),
+		)
 		this.addChild(this.space)
 		this.addChild(this.text)
 		this.resize()

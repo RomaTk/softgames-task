@@ -1,5 +1,3 @@
-import { PreciseSizeHelperCache } from './cache.js'
-
 export type THtmlText = {
 	readonly text: string
 	readonly style: {
@@ -7,17 +5,22 @@ export type THtmlText = {
 	}
 }
 
-export class PreciseSizeHelper {
-	protected readonly cache: PreciseSizeHelperCache<DOMRect>
+export type TCache<DomRectLike> = {
+	readonly add: (text: string, cssStyle: string, rect: DomRectLike) => void
+	readonly get: (text: string, cssStyle: string) => DomRectLike | undefined
+}
+
+export class PreciseSizeHelper<CacheLike extends TCache<DOMRect>> {
+	protected readonly cache: CacheLike
 	// Used to remove like div {} from css style
 	protected readonly styleContentParser: (style: string) => string
 
 	public constructor(
 		styleContentParser: (style: string) => string,
-		maxCachedDomRects: number,
+		cache: CacheLike,
 	) {
 		this.styleContentParser = styleContentParser
-		this.cache = new PreciseSizeHelperCache(maxCachedDomRects)
+		this.cache = cache
 	}
 
 	public getBoundingClientRect(htmlText: THtmlText): DOMRect {
