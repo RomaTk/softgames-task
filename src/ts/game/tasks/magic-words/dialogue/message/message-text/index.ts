@@ -1,5 +1,7 @@
+/* eslint-disable max-lines-per-function */
+/* eslint-disable one-var */
 import { LayoutContainer, LayoutSprite } from '@pixi/layout/components'
-import { measureHtmlText, type HTMLText } from 'pixi.js'
+import { HTMLTextStyle, measureHtmlText, type HTMLText } from 'pixi.js'
 import { getPreciseHTMLTextWidth } from './size-helper.js'
 
 export type BatchableHTMLTextLike<HTMLTextLike extends HTMLText> =
@@ -33,6 +35,9 @@ export class MessageText<
 	}
 
 	public resize(): void {
+		this.space.layout = {
+			width: '100%',
+		}
 		this.space.onRender = (): void => {
 			this.space.onRender = null
 			this.space.onLayout = (): void => {
@@ -50,17 +55,20 @@ export class MessageText<
 				}
 				batchableHTMLText.texturePromise
 					.then(() => {
-						if (this.space.width >= this.defaultWidth) {
+						if (this.space.width > this.defaultWidth) {
 							this.text.style.wordWrap = false
+							this.space.layout = {
+								width: this.defaultWidth,
+							}
 						} else {
 							this.text.style.wordWrap = true
-							this.text.style.wordWrapWidth = Math.floor(
+							const preciseWidth = getPreciseHTMLTextWidth(
+								this.text,
 								this.space.width,
 							)
+							this.text.style.wordWrapWidth = this.space.width
 							this.space.layout = {
-								width: Math.ceil(
-									getPreciseHTMLTextWidth(this.text),
-								),
+								width: preciseWidth,
 							}
 						}
 						this.space.layout = {

@@ -1,15 +1,16 @@
+/* eslint-disable max-statements */
 import { HTMLText } from 'pixi.js'
 
-export const getPreciseHTMLTextWidth = (htmlTextInstance: HTMLText) => {
+export const getPreciseHTMLTextWidth = (
+	htmlTextInstance: HTMLText,
+	wordWrapWidth: number,
+) => {
 	const text = htmlTextInstance.text
 	const style = htmlTextInstance.style.cssStyle
-	const styleContent = htmlTextInstance.style.cssStyle.replace(
-		/^[^{]*{\s*|\s*}[^}]*$/g,
-		'',
-	)
-	console.log('Style content:', styleContent)
+	const styleContent = style.replace(/^[^{]*{\s*|\s*}[^}]*$/g, '')
 	const div = document.createElement('div')
 	div.style.cssText = styleContent
+	div.style.maxWidth = `${wordWrapWidth}px`
 
 	div.style.position = 'absolute'
 	div.style.visibility = 'hidden'
