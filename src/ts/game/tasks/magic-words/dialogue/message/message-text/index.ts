@@ -26,6 +26,7 @@ export class MessageText<
 	protected readonly text: HTMLTextLike
 	protected readonly defaultWidth: number
 	protected readonly presiseSizeHelper: PreciseSizeHelperLike
+	protected readonly afterInitPromise: Promise<void>
 
 	public constructor(
 		text: HTMLTextLike,
@@ -45,10 +46,14 @@ export class MessageText<
 			},
 		})
 		this.presiseSizeHelper = presiseSizeHelper
-		this.init()
+		this.afterInitPromise = this.init()
 	}
 
-	public resize(): void {
+	public get afterInit(): Promise<void> {
+		return this.afterInitPromise
+	}
+
+	public async resize(): Promise<void> {
 		if (this.isDestroyed) {
 			throw new Error('Cannot resize destroyed MessageText')
 		}
@@ -61,25 +66,42 @@ export class MessageText<
 		this.space.layout = {
 			width: '100%',
 		}
-		// HACK We need to wait for layout to be updated and rendered in exacly this order
-		this.space.onRender = (): void => {
-			this.space.onRender = null
+		return new Promise((resolve, reject): void => {
 			// Stop if destroyed during async operations
 			if (this.isDestroyed) {
+				resolve()
 				return
 			}
-			this.space.onLayout = (): void => {
-				// POSSIBLE_BUG - layout can be null here => read below
-				// @ts-expect-error - in types it requires function, but actually it can be null (what is better)
-				this.space.onLayout = null
+			// HACK We need to wait for layout to be updated and rendered in exacly this order
+			this.space.onRender = (): void => {
+				this.space.onRender = null
 				// Stop if destroyed during async operations
 				if (this.isDestroyed) {
+					resolve()
 					return
 				}
-				this.resizeAfterAllUpdated()
+				this.space.onLayout = (): void => {
+					// POSSIBLE_BUG - layout can be null here => read below
+					// @ts-expect-error - in types it requires function, but actually it can be null (what is better)
+					this.space.onLayout = null
+					this.resizeAfterAllUpdated()
+						.then(() => {
+							resolve()
+						})
+						.catch((err: unknown) => {
+							reject(
+								new Error(
+									'Error during resizeAfterAllUpdated: ',
+									{
+										cause: err,
+									},
+								),
+							)
+						})
+				}
+				this.space.layout?.forceUpdate()
 			}
-			this.space.layout?.forceUpdate()
-		}
+		})
 	}
 
 	public override destroy(): void {
@@ -92,13 +114,17 @@ export class MessageText<
 		super.destroy(true)
 	}
 
-	protected init(): void {
+	protected async init(): Promise<void> {
 		this.addChild(this.space)
 		this.addChild(this.text)
-		this.resize()
+		await this.resize()
 	}
 
-	protected resizeAfterAllUpdated(): void {
+	protected async resizeAfterAllUpdated(): Promise<void> {
+		// Stop if destroyed during async operations
+		if (this.isDestroyed) {
+			return
+		}
 		const batchableHTMLText = this.getBatchableHTMLOfMessageText(),
 			defaultPosition = { [`x`]: 0, [`y`]: 0 }
 		this.text.position = {
@@ -109,28 +135,27 @@ export class MessageText<
 			// Don`t know how to handle this case properly
 			throw new Error('Batchable HTMLText data is not available')
 		}
-		batchableHTMLText.texturePromise
-			.then(() => {
-				// Stop if destroyed during async operations
-				if (this.isDestroyed) {
-					return
-				}
-				if (this.space.width > this.defaultWidth) {
-					this.resizeForLargeWidth()
-				} else {
-					this.resizeForSmallWidth()
-				}
-				this.space.layout = {
-					height: this.text.height,
-				}
-				this.isResizingStarted = false
-				if (this.isResizeAgainNeeded) {
-					this.resize()
-				}
-			})
-			.catch((err: unknown) => {
-				throw err
-			})
+		await batchableHTMLText.texturePromise
+		await this.resizeAfterTexurePromise()
+	}
+
+	protected async resizeAfterTexurePromise(): Promise<void> {
+		// Stop if destroyed during async operations
+		if (this.isDestroyed) {
+			return
+		}
+		if (this.space.width > this.defaultWidth) {
+			this.resizeForLargeWidth()
+		} else {
+			this.resizeForSmallWidth()
+		}
+		this.space.layout = {
+			height: this.text.height,
+		}
+		this.isResizingStarted = false
+		if (this.isResizeAgainNeeded) {
+			await this.resize()
+		}
 	}
 
 	protected resizeForLargeWidth(): void {

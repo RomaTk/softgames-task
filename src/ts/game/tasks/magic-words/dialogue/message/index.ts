@@ -19,7 +19,8 @@ export type TViewDestroyableNoOptions = {
 }
 
 export type TMessageLike = {
-	readonly resize: () => void
+	readonly resize: () => void | Promise<void>
+	readonly afterInit?: Promise<void>
 } & TViewDestroyableNoOptions
 
 export type TStaticFunctions<
@@ -93,6 +94,7 @@ export class Message<
 	protected readonly messageContainer: MessageContainerLike
 	// HACK to cover the sharp corner of the message container
 	protected readonly cornerRect: CornerRectLike
+	protected readonly afterInitPromise: Promise<void>
 
 	public constructor(
 		opt: TOptions<
@@ -130,14 +132,18 @@ export class Message<
 
 		this.messageContainer = opt.staticFunctions.create.messageContainer()
 
-		this.init()
+		this.afterInitPromise = this.init()
 	}
 
-	public resize(): void {
+	public get afterInit(): Promise<void> {
+		return this.afterInitPromise
+	}
+
+	public async resize(): Promise<void> {
 		if (this.isDestroyed) {
 			throw new Error('Cannot resize destroyed Message instance')
 		}
-		this.messageText.resize()
+		await this.messageText.resize()
 	}
 
 	public destroy(): void {
@@ -153,12 +159,13 @@ export class Message<
 		this.viewObject.destroy(true)
 	}
 
-	protected init(): void {
+	protected async init(): Promise<void> {
 		this.messageContainer.addChild(
 			this.cornerRect,
 			this.authorName,
 			this.messageText,
 		)
 		this.viewObject.addChild(this.authorAvatar, this.messageContainer)
+		await this.messageText.afterInit
 	}
 }
