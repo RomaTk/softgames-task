@@ -7,11 +7,6 @@ export type TMessageOptions<TextureLike> = {
 	readonly position: 'left' | 'right'
 }
 
-export type TSizeHelper = {
-	readonly width: number
-	readonly height: number
-}
-
 export type TViewWithChildren<ChildrenLike> = {
 	readonly addChild: (...children: readonly ChildrenLike[]) => void
 }
@@ -36,22 +31,19 @@ export type TStaticFunctions<
 	MessageContainerLike,
 	TextureLike,
 > = {
-	readonly generateViewObject: (position: 'left' | 'right') => ViewObjectLike
-	readonly generateAuthorName: (name: string) => AutorNameLike
-	readonly generateMessageText: (text: string) => MessageTextLike
-	readonly generateAvatar: (texture: TextureLike) => AvatarLike
-	readonly generateCornerRect: (position: 'left' | 'right') => CornerRectLike
-	readonly generateMessageContainer: () => MessageContainerLike
-	readonly generateHtmlTextWithImages: (
+	readonly create: {
+		readonly viewObject: (position: 'left' | 'right') => ViewObjectLike
+		readonly authorName: (name: string) => AutorNameLike
+		readonly messageText: (text: string) => MessageTextLike
+		readonly avatar: (texture: TextureLike) => AvatarLike
+		readonly cornerRect: (position: 'left' | 'right') => CornerRectLike
+		readonly messageContainer: () => MessageContainerLike
+	}
+	readonly getHtmlTextWithImages: (
 		text: string,
 		emojies: ReadonlyMap<string, string>,
 		throwNotCritical: (err: unknown) => void,
 	) => string
-}
-
-export type TSizeHelpers = {
-	readonly authorName: TSizeHelper
-	readonly message: TSizeHelper
 }
 
 export type TOptions<
@@ -116,32 +108,35 @@ export class Message<
 		this.isDestroyed = false
 		const htmlTextWithEmojies =
 			opt.htmlTextWithEmojies ??
-			opt.staticFunctions.generateHtmlTextWithImages(
+			opt.staticFunctions.getHtmlTextWithImages(
 				opt.messageData.text,
 				opt.mapEmojiToBase64,
 				opt.throwNotCritical,
 			)
-		this.viewObject = opt.staticFunctions.generateViewObject(
+		this.viewObject = opt.staticFunctions.create.viewObject(
 			opt.messageData.position,
 		)
-		this.authorName = opt.staticFunctions.generateAuthorName(
+		this.authorName = opt.staticFunctions.create.authorName(
 			opt.messageData.author.name,
 		)
 		this.messageText =
-			opt.staticFunctions.generateMessageText(htmlTextWithEmojies)
-		this.authorAvatar = opt.staticFunctions.generateAvatar(
+			opt.staticFunctions.create.messageText(htmlTextWithEmojies)
+		this.authorAvatar = opt.staticFunctions.create.avatar(
 			opt.messageData.author.texture,
 		)
-		this.cornerRect = opt.staticFunctions.generateCornerRect(
+		this.cornerRect = opt.staticFunctions.create.cornerRect(
 			opt.messageData.position,
 		)
 
-		this.messageContainer = opt.staticFunctions.generateMessageContainer()
+		this.messageContainer = opt.staticFunctions.create.messageContainer()
 
 		this.init()
 	}
 
 	public resize(): void {
+		if (this.isDestroyed) {
+			throw new Error('Cannot resize destroyed Message instance')
+		}
 		this.messageText.resize()
 	}
 

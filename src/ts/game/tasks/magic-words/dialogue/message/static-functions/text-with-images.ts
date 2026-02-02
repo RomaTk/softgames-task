@@ -1,4 +1,4 @@
-export const generateHtmlTextWithImages = (
+export const create = (
 	text: string,
 	emojies: ReadonlyMap<string, string>,
 	throwNotCritical: (err: unknown) => void,

@@ -8,6 +8,7 @@ export type THtmlText = {
 export type TCache<DomRectLike> = {
 	readonly add: (text: string, cssStyle: string, rect: DomRectLike) => void
 	readonly get: (text: string, cssStyle: string) => DomRectLike | undefined
+	readonly clear: () => void
 }
 
 export class PreciseSizeHelper<CacheLike extends TCache<DOMRect>> {
@@ -21,6 +22,10 @@ export class PreciseSizeHelper<CacheLike extends TCache<DOMRect>> {
 	) {
 		this.styleContentParser = styleContentParser
 		this.cache = cache
+	}
+
+	public clean(): void {
+		this.cache.clear()
 	}
 
 	public getBoundingClientRect(htmlText: THtmlText): DOMRect {

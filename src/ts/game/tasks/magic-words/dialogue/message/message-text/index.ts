@@ -18,6 +18,8 @@ export class MessageText<
 	protected isResizingStarted: boolean
 	protected isResizeAgainNeeded: boolean
 
+	protected isDestroyed: boolean
+
 	// Used to set layout space for the text
 	protected readonly space: LayoutSprite
 	// The actual text message
@@ -30,6 +32,7 @@ export class MessageText<
 		presiseSizeHelper: PreciseSizeHelperLike,
 	) {
 		super()
+		this.isDestroyed = false
 		this.isResizingStarted = false
 		this.isResizeAgainNeeded = false
 		this.text = text
@@ -42,12 +45,13 @@ export class MessageText<
 			},
 		})
 		this.presiseSizeHelper = presiseSizeHelper
-		this.addChild(this.space)
-		this.addChild(this.text)
-		this.resize()
+		this.init()
 	}
 
 	public resize(): void {
+		if (this.isDestroyed) {
+			throw new Error('Cannot resize destroyed MessageText')
+		}
 		if (this.isResizingStarted) {
 			this.isResizeAgainNeeded = true
 			return
@@ -60,14 +64,38 @@ export class MessageText<
 		// HACK We need to wait for layout to be updated and rendered in exacly this order
 		this.space.onRender = (): void => {
 			this.space.onRender = null
+			// Stop if destroyed during async operations
+			if (this.isDestroyed) {
+				return
+			}
 			this.space.onLayout = (): void => {
 				// POSSIBLE_BUG - layout can be null here => read below
 				// @ts-expect-error - in types it requires function, but actually it can be null (what is better)
 				this.space.onLayout = null
+				// Stop if destroyed during async operations
+				if (this.isDestroyed) {
+					return
+				}
 				this.resizeAfterAllUpdated()
 			}
 			this.space.layout?.forceUpdate()
 		}
+	}
+
+	public override destroy(): void {
+		if (this.isDestroyed) {
+			return
+		}
+		this.isDestroyed = true
+		this.text.destroy(true)
+		this.space.destroy(true)
+		super.destroy(true)
+	}
+
+	protected init(): void {
+		this.addChild(this.space)
+		this.addChild(this.text)
+		this.resize()
 	}
 
 	protected resizeAfterAllUpdated(): void {
@@ -83,6 +111,10 @@ export class MessageText<
 		}
 		batchableHTMLText.texturePromise
 			.then(() => {
+				// Stop if destroyed during async operations
+				if (this.isDestroyed) {
+					return
+				}
 				if (this.space.width > this.defaultWidth) {
 					this.resizeForLargeWidth()
 				} else {

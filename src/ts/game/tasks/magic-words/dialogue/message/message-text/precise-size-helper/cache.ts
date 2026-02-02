@@ -51,6 +51,19 @@ export class PreciseSizeHelperCache<DomRectLike extends object> {
 		this.cleanDueToLimit()
 	}
 
+	public clear(): void {
+		this.boundingClientRects.toFind.clear()
+		// Cleans byTimeCreated and savedProperties
+		this.boundingClientRects.toClean.byTimeCreated
+			.splice(
+				minSizeOfArray,
+				this.boundingClientRects.toClean.byTimeCreated.length,
+			)
+			.forEach((rect) => {
+				this.boundingClientRects.toClean.savedProperties.delete(rect)
+			})
+	}
+
 	public add(text: string, cssStyle: string, rect: DomRectLike): void {
 		const current = this.get(text, cssStyle)
 

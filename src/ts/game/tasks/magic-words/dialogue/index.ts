@@ -2,19 +2,33 @@ import { LayoutContainer, ScrollSpring } from '@pixi/layout/components'
 import type { Data as DataFromEndpoint } from '../data.js'
 import { ErrorCatcher } from '../../../error-catcher.js'
 import { Message } from './message/index.js'
-import { staticFunctions } from './message/static-functions.js'
+import { getGrouppedStaticFunctions } from './message/static-functions/index.js'
 import { Texture } from 'pixi.js'
 import { PreciseSizeHelper } from './message/message-text/precise-size-helper/index.js'
 import { styleContentParser } from './message/message-text/precise-size-helper/style-content-parser.js'
 import { PreciseSizeHelperCache } from './message/message-text/precise-size-helper/cache.js'
 
 export type TMessage = Message<
-	ReturnType<typeof staticFunctions.generateViewObject>,
-	ReturnType<typeof staticFunctions.generateMessageContainer>,
-	ReturnType<typeof staticFunctions.generateAuthorName>,
-	ReturnType<typeof staticFunctions.generateMessageText>,
-	ReturnType<typeof staticFunctions.generateAvatar>,
-	ReturnType<typeof staticFunctions.generateCornerRect>,
+	ReturnType<
+		ReturnType<typeof getGrouppedStaticFunctions>['create']['viewObject']
+	>,
+	ReturnType<
+		ReturnType<
+			typeof getGrouppedStaticFunctions
+		>['create']['messageContainer']
+	>,
+	ReturnType<
+		ReturnType<typeof getGrouppedStaticFunctions>['create']['authorName']
+	>,
+	ReturnType<
+		ReturnType<typeof getGrouppedStaticFunctions>['create']['messageText']
+	>,
+	ReturnType<
+		ReturnType<typeof getGrouppedStaticFunctions>['create']['avatar']
+	>,
+	ReturnType<
+		ReturnType<typeof getGrouppedStaticFunctions>['create']['cornerRect']
+	>,
 	Texture
 >
 
@@ -169,11 +183,7 @@ export class Dialogue<Data extends DataFromEndpoint> {
 					})(),
 				text: messageData.text,
 			},
-			staticFunctions: {
-				...staticFunctions,
-				generateMessageText: (text) =>
-					staticFunctions.generateMessageText(text, preciseHelper),
-			},
+			staticFunctions: getGrouppedStaticFunctions(preciseHelper),
 			throwNotCritical: (err: unknown): void => {
 				ErrorCatcher.instance.throw(err, true)
 			},
