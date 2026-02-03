@@ -1,6 +1,9 @@
 export const create = (
 	text: string,
-	emojies: ReadonlyMap<string, string>,
+	emojies: {
+		// It should be like (name: string) => base64 | undefined
+		readonly get: (name: string) => string | undefined
+	},
 	throwNotCritical: (err: unknown) => void,
 ): string =>
 	text.replace(
@@ -16,11 +19,9 @@ export const create = (
 						),
 					) ??
 					((): string => {
-						try {
-							throw Error(`Emoji with name ${emojie} not found`)
-						} catch (err) {
-							throwNotCritical(err)
-						}
+						throwNotCritical(
+							Error(`Emoji with name ${emojie} not found`),
+						)
 
 						return ''
 					})()

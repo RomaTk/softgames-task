@@ -1,5 +1,4 @@
 import { Container, Ticker, type TickerCallback } from 'pixi.js'
-import type { Data } from './data.js'
 import { Dialogue } from './dialogue/index.js'
 import { LoadView } from './load/index.js'
 import { Loader } from './loader.js'
@@ -15,7 +14,7 @@ export class MagicWordsTask<SizeLike extends TSize> {
 	public readonly afterInitPromise: Promise<void>
 	protected readonly loader: Loader
 	protected readonly scenes: {
-		dialogue?: Dialogue<Data>
+		dialogue?: Dialogue<SizeLike, Loader['data']>
 		load?: LoadView<
 			ReturnType<(typeof staticFunctions)['createCore']>,
 			ReturnType<(typeof staticFunctions)['createSpinner']>,
@@ -48,7 +47,7 @@ export class MagicWordsTask<SizeLike extends TSize> {
 
 	public resize(): void {
 		this.scenes.load?.resize()
-		this.scenes.dialogue?.resize(this.size.width, this.size.height)
+		this.scenes.dialogue?.resize()
 	}
 
 	public async destroy(): Promise<void> {
@@ -75,8 +74,7 @@ export class MagicWordsTask<SizeLike extends TSize> {
 	}
 
 	protected initAfterLoad(): void {
-		this.scenes.dialogue = new Dialogue(this.data)
-		this.scenes.dialogue.resize(this.size.width, this.size.height)
+		this.scenes.dialogue = new Dialogue(this.size, this.data)
 		this.viewObject.addChild(this.scenes.dialogue.viewObject)
 		this.destroyLoadForTask()
 	}

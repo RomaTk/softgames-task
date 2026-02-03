@@ -8,43 +8,42 @@ import { PreciseSizeHelper } from './message/message-text/precise-size-helper/in
 import { styleContentParser } from './message/message-text/precise-size-helper/style-content-parser.js'
 import { PreciseSizeHelperCache } from './message/message-text/precise-size-helper/cache.js'
 
-export type TMessage = Message<
-	ReturnType<
-		ReturnType<typeof getGrouppedStaticFunctions>['create']['viewObject']
-	>,
-	ReturnType<
-		ReturnType<
-			typeof getGrouppedStaticFunctions
-		>['create']['messageContainer']
-	>,
-	ReturnType<
-		ReturnType<typeof getGrouppedStaticFunctions>['create']['authorName']
-	>,
-	ReturnType<
-		ReturnType<typeof getGrouppedStaticFunctions>['create']['messageText']
-	>,
-	ReturnType<
-		ReturnType<typeof getGrouppedStaticFunctions>['create']['avatar']
-	>,
-	ReturnType<
-		ReturnType<typeof getGrouppedStaticFunctions>['create']['cornerRect']
-	>,
-	Texture
->
-
 const preciseHelper = new PreciseSizeHelper(
 	styleContentParser,
 	new PreciseSizeHelperCache<DOMRect>(10),
 )
 
-// Take into account that this class can be used only after initialization of application with layout plugin
-export class Dialogue<Data extends DataFromEndpoint> {
-	public readonly viewObject: LayoutContainer
-	protected readonly data: Data
-	protected readonly messages: readonly TMessage[]
-	protected readonly scrollSpring: ScrollSpring
+export type TSize = {
+	readonly width: number
+	readonly height: number
+}
 
-	public constructor(data: Data) {
+export type TMessageLike = {
+	readonly viewObject: unknown
+}
+
+export type TViewObjectLike<
+	MessageLike extends { readonly viewObject: unknown },
+> = {
+	readonly addChild: (
+		...children: readonly MessageLike['viewObject'][]
+	) => void
+}
+
+// Take into account that this class can be used only after initialization of application with layout plugin
+export class Dialogue<
+	SizeLike extends TSize,
+	Data extends DataFromEndpoint,
+	MessageLike extends TMessageLike,
+> {
+	public readonly viewObject: TViewObjectLike<MessageLike>
+	protected readonly data: Data
+	protected readonly messages: readonly MessageLike[]
+	protected readonly scrollSpring: ScrollSpring
+	protected readonly size: SizeLike
+
+	public constructor(size: SizeLike, data: Data) {
+		this.size = size
 		this.scrollSpring = new ScrollSpring({
 			damp: 0.7,
 			max: 200,
@@ -63,12 +62,7 @@ export class Dialogue<Data extends DataFromEndpoint> {
 		})
 		this.data = data
 		this.messages = this.createMessages()
-		this.viewObject.addChild(
-			...this.messages.map(
-				(msg: { readonly viewObject: LayoutContainer }) =>
-					msg.viewObject,
-			),
-		)
+		this.viewObject.addChild(...this.messages.map((msg) => msg.viewObject))
 		// HACK Here alpha is used as hack (look more in message (wrap + layout problem) )
 		this.viewObject.alpha = 0.001
 		this.viewObject.layout = {
@@ -77,20 +71,17 @@ export class Dialogue<Data extends DataFromEndpoint> {
 		}
 
 		this.viewObject.alpha = 1
+		this.resize()
 	}
 
-	public resize(width: number, height: number): void {
+	public resize(): void {
 		this.viewObject.layout = {
-			height,
-			width,
+			height: this.size.height,
+			width: this.size.width,
 		}
-		this.messages.forEach(
-			(message: {
-				readonly resize: (width: number, height: number) => void
-			}) => {
-				message.resize(width, height)
-			},
-		)
+		this.messages.forEach((message: { readonly resize: () => void }) => {
+			message.resize()
+		})
 	}
 
 	public destroy(): void {
@@ -100,50 +91,33 @@ export class Dialogue<Data extends DataFromEndpoint> {
 		this.viewObject.destroy(true)
 	}
 
-	protected createMessages(): TMessage[] {
-		const messages: TMessage[] = []
+	protected createMessages(): MessageLike[] {
+		const messages: MessageLike[] = []
 		for (const messageData of this.data.dialogue) {
 			messages.push(this.createMessage(messageData))
 		}
 		return messages
 	}
 
-	protected createMapOfEmojis(): ReadonlyMap<string, string> {
-		const emojiesMap = new Map<string, string>()
-		this.data.emojies.forEach(
-			(data: {
-				readonly name: string
-				readonly base64?: string | undefined
-			}) => {
-				if (typeof data.base64 === 'undefined') {
-					return
-				}
-				emojiesMap.set(data.name, data.base64)
-			},
-		)
-		return emojiesMap
-	}
-
 	// eslint-disable-next-line max-lines-per-function
 	protected createMessage(messageData: {
 		readonly name: string
 		readonly text: string
-	}): TMessage {
+	}): MessageLike {
 		const avatar = (():
-				| {
-						readonly name: string
-						readonly position: 'left' | 'right'
-						readonly url: string
-				  }
-				| undefined => {
-				const avatars: readonly {
+			| {
 					readonly name: string
 					readonly position: 'left' | 'right'
 					readonly url: string
-				}[] = this.data.avatars
-				return avatars.find((av) => av.name === messageData.name)
-			})(),
-			mapEmojiToBase64 = this.createMapOfEmojis()
+			  }
+			| undefined => {
+			const avatars: readonly {
+				readonly name: string
+				readonly position: 'left' | 'right'
+				readonly url: string
+			}[] = this.data.avatars
+			return avatars.find((av) => av.name === messageData.name)
+		})()
 
 		if (!avatar) {
 			try {
@@ -156,7 +130,9 @@ export class Dialogue<Data extends DataFromEndpoint> {
 		}
 
 		return new Message({
-			mapEmojiToBase64,
+			mapEmojiToBase64: {
+				get: (name: string) => this.data.getEmojieData(name)?.base64,
+			},
 			messageData: {
 				author: {
 					name: messageData.name,

@@ -83,10 +83,6 @@ const config: TEslintConfig[] = [
 				{
 					allow: [
 						{
-							from: 'lib',
-							name: ['ReadonlyMap'],
-						},
-						{
 							from: 'package',
 							name: ['default'],
 							package: 'emittery',

@@ -42,9 +42,14 @@ export type TStaticFunctions<
 	}
 	readonly getHtmlTextWithImages: (
 		text: string,
-		emojies: ReadonlyMap<string, string>,
+		emojies: TReadonlyEmojiesMap,
 		throwNotCritical: (err: unknown) => void,
 	) => string
+}
+
+export type TReadonlyEmojiesMap = {
+	// It should be like (name: string) => base64 | undefined
+	readonly get: (name: string) => string | undefined
 }
 
 export type TOptions<
@@ -66,9 +71,8 @@ export type TOptions<
 		TextureLike
 	>
 	readonly messageData: TMessageOptions<TextureLike>
-	readonly mapEmojiToBase64: ReadonlyMap<string, string>
+	readonly mapEmojiToBase64: TReadonlyEmojiesMap
 	readonly throwNotCritical: (err: unknown) => void
-	readonly htmlTextWithEmojies?: string
 }
 
 export class Message<
@@ -108,13 +112,11 @@ export class Message<
 		>,
 	) {
 		this.isDestroyed = false
-		const htmlTextWithEmojies =
-			opt.htmlTextWithEmojies ??
-			opt.staticFunctions.getHtmlTextWithImages(
-				opt.messageData.text,
-				opt.mapEmojiToBase64,
-				opt.throwNotCritical,
-			)
+		const htmlTextWithEmojies = opt.staticFunctions.getHtmlTextWithImages(
+			opt.messageData.text,
+			opt.mapEmojiToBase64,
+			opt.throwNotCritical,
+		)
 		this.viewObject = opt.staticFunctions.create.viewObject(
 			opt.messageData.position,
 		)
