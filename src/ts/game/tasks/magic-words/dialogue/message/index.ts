@@ -88,7 +88,7 @@ export class Message<
 	MessageTextLike extends TMessageLike,
 	AvatarLike extends TViewDestroyableNoOptions,
 	CornerRectLike extends TViewDestroyable,
-	TextureLike extends TViewDestroyable,
+	TextureLike,
 > {
 	public readonly viewObject: ViewObjectLike
 	protected isDestroyed: boolean

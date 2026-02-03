@@ -1,19 +1,23 @@
 import type { Data as DataFromEndpoint } from '../data.js'
-import { ErrorCatcher } from '../../../error-catcher.js'
-import { Texture } from 'pixi.js'
 
 export type TSize = {
 	readonly width: number
 	readonly height: number
 }
 
-export type TMessageData = {
+export type TMessageData<TextureLike> = {
 	readonly author: {
 		readonly name: string
-		readonly texture: Texture
+		readonly texture: TextureLike
 	}
 	readonly position: 'left' | 'right'
 	readonly text: string
+}
+
+export type TAvatarData = {
+	readonly name: string
+	readonly position: 'left' | 'right'
+	readonly url: string | null
 }
 
 export type TMessageLike = {
@@ -34,24 +38,31 @@ export type TViewObjectLike<MessageViewObjectLike> = {
 	readonly destroy: (options: true) => void
 }
 
-export type TOptions<SizeLike, MessageLike, ScrollSpringLike, ViewObjectLike> =
-	{
-		readonly create: {
-			readonly viewObject: (
-				scrollSpring: ScrollSpringLike,
-			) => ViewObjectLike
-			readonly scrollSpring: () => ScrollSpringLike
-			readonly message: (messageData: TMessageData) => MessageLike
-			readonly
-		}
-		readonly size: SizeLike
+export type TOptions<
+	SizeLike,
+	MessageLike,
+	ScrollSpringLike,
+	ViewObjectLike,
+	TextureLike,
+> = {
+	readonly create: {
+		readonly viewObject: (scrollSpring: ScrollSpringLike) => ViewObjectLike
+		readonly scrollSpring: () => ScrollSpringLike
+		readonly message: (
+			messageData: TMessageData<TextureLike>,
+		) => MessageLike
 	}
+	readonly getAvatarTexture: (url: string | null) => TextureLike
+	readonly throwNotCritical: (err: unknown) => void
+	readonly size: SizeLike
+}
 
 export class Dialogue<
 	SizeLike extends TSize,
 	MessageLike extends TMessageLike,
 	ScrollSpringLike,
 	ViewObjectLike extends TViewObjectLike<MessageLike['viewObject']>,
+	TextureLike,
 	Data extends DataFromEndpoint,
 > {
 	public readonly viewObject: ViewObjectLike
@@ -66,7 +77,8 @@ export class Dialogue<
 			SizeLike,
 			MessageLike,
 			ScrollSpringLike,
-			ViewObjectLike
+			ViewObjectLike,
+			TextureLike
 		>,
 		data: Data,
 	) {
@@ -74,7 +86,11 @@ export class Dialogue<
 		this.scrollSpring = options.create.scrollSpring()
 		this.viewObject = options.create.viewObject(this.scrollSpring)
 		this.data = data
-		this.messages = this.createMessages(options.create.message)
+		this.messages = this.createMessages(
+			options.create.message,
+			options.getAvatarTexture,
+			options.throwNotCritical,
+		)
 		this.viewObject.addChild(...this.messages.map((msg) => msg.viewObject))
 		this.initPromise = this.init()
 	}
@@ -119,16 +135,29 @@ export class Dialogue<
 	}
 
 	protected createMessages(
-		createMessage: (messageData: TMessageData) => MessageLike,
+		createMessage: (messageData: TMessageData<TextureLike>) => MessageLike,
+		getAvatarTexture: (url: string | null) => TextureLike,
+		throwNotCritical: (err: unknown) => void,
 	): MessageLike[] {
 		const messages: MessageLike[] = []
 		for (const dialogueData of this.data.dialogue) {
-			messages.push(createMessage(this.getMessageData(dialogueData)))
+			messages.push(
+				createMessage(
+					this.getMessageData(
+						dialogueData,
+						getAvatarTexture,
+						throwNotCritical,
+					),
+				),
+			)
 		}
 		return messages
 	}
 
-	protected getAvatarDataByName(name: string): Data['avatars'][number] {
+	protected getAvatarDataByName(
+		name: string,
+		throwNotCritical: (err: unknown) => void,
+	): TAvatarData {
 		const avatarData = this.data.avatars.find(
 			(av: { readonly name: string }) => av.name === name,
 		)
@@ -136,7 +165,7 @@ export class Dialogue<
 			try {
 				throw new Error(`Avatar for name "${name}" not found`)
 			} catch (err) {
-				ErrorCatcher.instance.throw(err, true)
+				throwNotCritical(err)
 			}
 
 			return {
@@ -148,28 +177,29 @@ export class Dialogue<
 					}
 					return 'right'
 				})(),
-				url: '',
+				url: null,
 			}
 		}
 
 		return avatarData
 	}
 
-	protected getMessageData(dialogueData: {
-		readonly name: string
-		readonly text: string
-	}): TMessageData {
-		const avatar = this.getAvatarDataByName(dialogueData.name)
+	protected getMessageData<T>(
+		dialogueData: {
+			readonly name: string
+			readonly text: string
+		},
+		getAvatarTexture: (url: string | null) => T,
+		throwNotCritical: (err: unknown) => void,
+	): TMessageData<T> {
+		const avatar = this.getAvatarDataByName(
+			dialogueData.name,
+			throwNotCritical,
+		)
 		return {
 			author: {
 				name: dialogueData.name,
-				texture: ((): Texture => {
-					const { url } = avatar
-					if (url === '') {
-						return Texture.WHITE
-					}
-					return Texture.from(url)
-				})(),
+				texture: getAvatarTexture(avatar.url),
 			},
 			position: avatar.position,
 			text: dialogueData.text,

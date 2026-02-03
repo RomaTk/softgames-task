@@ -41,6 +41,11 @@ export class MagicWordsTask<SizeLike extends TSize> {
 					typeof getGrouppedOptionsDialogue<SizeLike>
 				>['create']['viewObject']
 			>,
+			ReturnType<
+				ReturnType<
+					typeof getGrouppedOptionsDialogue<SizeLike>
+				>['getAvatarTexture']
+			>,
 			Loader['data']
 		>
 		load?: LoadView<
@@ -108,16 +113,22 @@ export class MagicWordsTask<SizeLike extends TSize> {
 	protected initAfterLoad(): void {
 		this.scenes.dialogue = new Dialogue(
 			{
-				...getGrouppedOptionsDialogue<SizeLike>(this.size, {
-					mapEmojiToBase64: {
-						get: (name: string) =>
-							this.data.getEmojieData(name)?.base64,
+				...getGrouppedOptionsDialogue<SizeLike>(
+					this.size,
+					{
+						mapEmojiToBase64: {
+							get: (name: string) =>
+								this.data.getEmojieData(name)?.base64,
+						},
+						preciseSizeHelper: preciseHelper,
+						throwNotCritical: (err: unknown) => {
+							ErrorCatcher.instance.throw(err, true)
+						},
 					},
-					preciseSizeHelper: preciseHelper,
-					throwNotCritical: (err: unknown) => {
+					(err: unknown) => {
 						ErrorCatcher.instance.throw(err, true)
 					},
-				}),
+				),
 			},
 			this.data,
 		)

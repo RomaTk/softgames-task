@@ -1,14 +1,17 @@
-import { TOptions, TSize } from '../index.js'
-import { Message, TOptions as TMessageOptionsGeneral } from './message.js'
+import { Message, type TOptions as TMessageOptionsGeneral } from './message.js'
+import type { TOptions, TSize } from '../index.js'
+import type { Texture } from 'pixi.js'
 import { create as createScrollSpring } from './scroll-spring.js'
 import { create as createViewObject } from './view-object.js'
+import { getAvatarTexture } from './avatar-texture.js'
 
 export type TGroupedOptions<SizeLike, Message> = Omit<
 	TOptions<
 		SizeLike,
 		Message,
 		ReturnType<typeof createScrollSpring>,
-		ReturnType<typeof createViewObject>
+		ReturnType<typeof createViewObject>,
+		Texture
 	>,
 	'create'
 > & {
@@ -21,7 +24,8 @@ export type TGroupedOptions<SizeLike, Message> = Omit<
 			SizeLike,
 			Message,
 			ReturnType<typeof createScrollSpring>,
-			ReturnType<typeof createViewObject>
+			ReturnType<typeof createViewObject>,
+			Texture
 		>['create'],
 		'message'
 	>
@@ -30,6 +34,7 @@ export type TGroupedOptions<SizeLike, Message> = Omit<
 export const getGrouppedOptions = <SizeLike extends TSize>(
 	size: SizeLike,
 	messageOptionsGeneral: Omit<TMessageOptionsGeneral, 'messageData'>,
+	throwNotCritical: (err: unknown) => void,
 ): TGroupedOptions<SizeLike, Message> => ({
 	create: {
 		message: (currentMessageData: TMessageOptionsGeneral['messageData']) =>
@@ -40,5 +45,7 @@ export const getGrouppedOptions = <SizeLike extends TSize>(
 		scrollSpring: createScrollSpring,
 		viewObject: createViewObject,
 	},
+	getAvatarTexture,
 	size,
+	throwNotCritical,
 })
