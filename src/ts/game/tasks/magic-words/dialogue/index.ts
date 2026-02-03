@@ -69,6 +69,14 @@ export class Dialogue<Data extends DataFromEndpoint> {
 					msg.viewObject,
 			),
 		)
+		// HACK Here alpha is used as hack (look more in message (wrap + layout problem) )
+		this.viewObject.alpha = 0.001
+		this.viewObject.layout = {
+			display: 'flex',
+			flexDirection: 'column',
+		}
+
+		this.viewObject.alpha = 1
 	}
 
 	public resize(width: number, height: number): void {
@@ -83,17 +91,6 @@ export class Dialogue<Data extends DataFromEndpoint> {
 				message.resize(width, height)
 			},
 		)
-	}
-
-	public async display(): Promise<void> {
-		// HACK Here alpha is used as hack (look more in message (wrap + layout problem) )
-		this.viewObject.alpha = 0.001
-		this.viewObject.layout = {
-			display: 'flex',
-			flexDirection: 'column',
-		}
-
-		this.viewObject.alpha = 1
 	}
 
 	public destroy(): void {

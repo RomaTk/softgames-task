@@ -1,3 +1,4 @@
+/* eslint-disable max-statements */
 import '@pixi/layout'
 import * as Pixi from 'pixi.js'
 import { Application, Container } from 'pixi.js'
@@ -10,6 +11,7 @@ import { OnTickResizeObserver } from './resize-observer.js'
 import { PhoenixFlameTask } from './tasks/phoenix-flame/index.js'
 import { PixiPlugin } from 'gsap/PixiPlugin'
 import { gsap } from 'gsap'
+import { TaskSize } from './task-size.js'
 
 gsap.registerPlugin(PixiPlugin)
 PixiPlugin.registerPIXI(Pixi)
@@ -43,12 +45,6 @@ export class Game {
 
 	public constructor() {
 		Game.instance = this
-		window.game = this
-		window.test = () => {
-			return this.application.renderer.htmlText.getManagedTexture(
-				window.messageText,
-			)
-		}
 		this.errorCatcher = ErrorCatcher.instance
 		this.errorCatcher.actionOnError = (): void => {
 			const { parentElement } = this.application.canvas
@@ -190,12 +186,17 @@ export class Game {
 		if (this.isTaskRunning(MagicWordsTask)) {
 			return
 		}
-		const task = new MagicWordsTask()
+		const task = new MagicWordsTask(
+			new TaskSize(
+				() => document.body.clientHeight,
+				() => document.body.clientWidth,
+			),
+		)
 		this.tasks.add(task)
-		task.resize(document.body.clientWidth, document.body.clientHeight)
+		task.resize()
 		this.tasksContainer.addChild(task.viewObject)
 		this.destroyTasks(MagicWordsTask)
-		await task.display()
+		// await task.display()
 	}
 
 	protected launchAceOfShadowsTask(): void {

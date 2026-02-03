@@ -1,174 +1,93 @@
-import { Assets, Container, Ticker, type TickerCallback } from 'pixi.js'
-import { Data } from './data.js'
+import { Container, Ticker, type TickerCallback } from 'pixi.js'
+import type { Data } from './data.js'
 import { Dialogue } from './dialogue/index.js'
-import { ErrorCatcher } from '../../error-catcher.js'
-import { LoadForTask } from '../load/index.js'
-import { staticFunctions } from '../load/static-fuctions.js'
+import { LoadView } from './load/index.js'
+import { Loader } from './loader.js'
+import { staticFunctions } from './load/static-fuctions.js'
 
-export class MagicWordsTask {
+export type TSize = {
+	readonly width: number
+	readonly height: number
+}
+
+export class MagicWordsTask<SizeLike extends TSize> {
 	public readonly viewObject: Container
-	protected loadPromise?: Promise<void>
-	protected loadForTask?: LoadForTask<
-		ReturnType<(typeof staticFunctions)['createCore']>,
-		ReturnType<(typeof staticFunctions)['createSpinner']>,
-		ReturnType<(typeof staticFunctions)['createViewObject']>,
-		TickerCallback<Ticker>,
-		Ticker
-	>
-	protected dialogue?: Dialogue<Data>
+	public readonly afterInitPromise: Promise<void>
+	protected readonly loader: Loader
+	protected readonly scenes: {
+		dialogue?: Dialogue<Data>
+		load?: LoadView<
+			ReturnType<(typeof staticFunctions)['createCore']>,
+			ReturnType<(typeof staticFunctions)['createSpinner']>,
+			ReturnType<(typeof staticFunctions)['createViewObject']>,
+			TickerCallback<Ticker>,
+			Ticker,
+			SizeLike
+		>
+	}
 	// We save this data because objects are created dynamically and need the value set immediately
-	protected lastResizeData?: {
-		readonly width: number
-		readonly height: number
-	}
-	protected readonly endpoint: string
-	protected readonly data: Data
-	// Can be overridden in subclasses to customize behavior
-	protected readonly static: typeof MagicWordsTask
+	protected readonly size: SizeLike
 
-	public constructor() {
-		this.static = MagicWordsTask
-		this.endpoint =
-			'https://private-624120-softgamesassignment.apiary-mock.com/v2/magicwords'
+	public constructor(size: SizeLike) {
+		this.size = size
+		this.loader = new Loader(
+			'https://private-624120-softgamesassignment.apiary-mock.com/v2/magicwords',
+		)
 		this.viewObject = new Container()
-		this.data = new Data()
+		this.scenes = {}
+		this.afterInitPromise = this.init()
 	}
 
-	protected static async urlToBase64(url: string): Promise<string> {
-		const blob = await (await fetch(url)).blob()
-
-		// Use FileReader to read the blob
-		return new Promise<string>((resolve, reject) => {
-			const reader = new FileReader()
-			reader.onloadend = (): void => {
-				const { result } = reader
-				if (result === null) {
-					reject(new Error('Failed to convert blob to base64'))
-					return
-				} else if (typeof result !== 'string') {
-					const textDecoder = new TextDecoder()
-					resolve(textDecoder.decode(result))
-					return
-				}
-				resolve(result)
-			}
-			reader.onerror = reject
-			reader.readAsDataURL(blob)
-		})
+	public get afterInit(): Promise<void> {
+		return this.afterInitPromise
 	}
 
-	public async load(): Promise<void> {
-		if (this.loadPromise) {
-			return this.loadPromise
-		}
-		this.loadPromise = (async (): Promise<void> => {
-			const response = await fetch(this.endpoint)
-			if (!response.ok) {
-				throw new Error(
-					`HTTP error ${response.status}: ${response.statusText}`,
-				)
-			}
-			this.data.parse(await response.json())
-			await Promise.all([this.loadEmojies(), this.loadAvatars()])
-		})()
-		return this.loadPromise
+	protected get data(): Loader['data'] {
+		return this.loader.data
 	}
 
-	public resize(width: number, height: number): void {
-		this.lastResizeData = { height, width }
-		this.loadForTask?.resize(width, height)
-		this.dialogue?.resize(width, height)
+	public resize(): void {
+		this.scenes.load?.resize()
+		this.scenes.dialogue?.resize(this.size.width, this.size.height)
 	}
 
-	public async display(): Promise<void> {
-		this.displayLoading()
-		await this.load()
-		await this.displayDialogue()
-		this.destroyLoadForTask()
-	}
-
-	public destroy(): void {
+	public async destroy(): Promise<void> {
 		this.destroyLoadForTask()
 		this.destroyDialogue()
 		this.viewObject.destroy(true)
-		this.data.avatars.forEach((avatar: { readonly url: string }) => {
-			Assets.unload(avatar.url).catch((err: unknown) => {
-				ErrorCatcher.instance.throw(err, false)
-			})
-		})
+		await this.loader.destroy()
 	}
 
-	protected displayLoading(): void {
-		this.loadForTask ??= new LoadForTask(
-			staticFunctions,
-			this.lastResizeData ?? { height: 0, width: 0 },
-			Ticker.shared,
-		)
-		this.viewObject.addChild(this.loadForTask.viewObject)
+	protected async init(): Promise<void> {
+		const load = new LoadView(staticFunctions, this.size, Ticker.shared)
+		this.viewObject.addChild(load.viewObject)
+		this.scenes.load = load
+		try {
+			await this.loader.afterLoad
+			this.initAfterLoad()
+		} catch (err: unknown) {
+			if (err === this.loader.destroyDuringLoadingError) {
+				// Expected behavior, do nothing
+				return
+			}
+			throw err
+		}
 	}
 
-	protected async displayDialogue(): Promise<void> {
-		const noSize = 0
-		this.dialogue ??= new Dialogue(this.data)
-		this.dialogue.resize(
-			this.lastResizeData?.width ?? noSize,
-			this.lastResizeData?.height ?? noSize,
-		)
-		this.viewObject.addChild(this.dialogue.viewObject)
-		await this.dialogue.display()
+	protected initAfterLoad(): void {
+		this.scenes.dialogue = new Dialogue(this.data)
+		this.scenes.dialogue.resize(this.size.width, this.size.height)
+		this.viewObject.addChild(this.scenes.dialogue.viewObject)
+		this.destroyLoadForTask()
 	}
 
 	protected destroyLoadForTask(): void {
-		this.loadForTask?.destroy()
-		delete this.loadForTask
+		this.scenes.load?.destroy()
+		delete this.scenes.load
 	}
 
 	protected destroyDialogue(): void {
-		this.dialogue?.destroy()
-		delete this.dialogue
-	}
-
-	protected async loadEmojies(): Promise<void> {
-		if (!this.data.emojies.length) {
-			return
-		}
-
-		const results = await Promise.all(
-			this.data.emojies.map(
-				async (emoji: {
-					readonly url: string
-					readonly name: string
-				}): Promise<{ name: string; base64: string }> => {
-					const base64Data = await this.static.urlToBase64(emoji.url)
-					return {
-						base64: base64Data,
-						name: emoji.name,
-					}
-				},
-			),
-		)
-		results.every(
-			(el: {
-				readonly name: string
-				readonly base64: string
-			}): boolean => {
-				this.data.addBase64ToEmojie(el.name, el.base64)
-				return true
-			},
-		)
-	}
-
-	protected async loadAvatars(): Promise<void> {
-		await Promise.all(
-			this.data.avatars.map(
-				async (avatar: { readonly url: string }): Promise<void> =>
-					Assets.load({
-						parser: 'texture',
-						src: avatar.url,
-					}).catch((err: unknown) => {
-						ErrorCatcher.instance.throw(err, true)
-					}),
-			),
-		)
+		this.scenes.dialogue?.destroy()
+		delete this.scenes.dialogue
 	}
 }

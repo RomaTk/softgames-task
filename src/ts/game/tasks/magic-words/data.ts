@@ -25,38 +25,27 @@ export class Data {
 			}),
 		),
 	})
-	// Allows subclasses to override the static reference for customized parsing behavior
-	protected static: typeof Data
-	protected parsedData?: z.infer<(typeof Data)['dataSchema']>
+	protected readonly parsedData: z.infer<(typeof Data)['dataSchema']>
 
-	public constructor() {
-		this.static = Data
+	public constructor(input: unknown) {
+		this.parsedData = Data.parseData(input)
 	}
 
 	public get emojies(): readonly z.infer<
 		(typeof Data)['dataSchema']
 	>['emojies'][number][] {
-		if (!this.parsedData) {
-			throw new Error('Data not parsed yet')
-		}
 		return this.parsedData.emojies
 	}
 
 	public get dialogue(): readonly z.infer<
 		(typeof Data)['dataSchema']
 	>['dialogue'][number][] {
-		if (!this.parsedData) {
-			throw new Error('Data not parsed yet')
-		}
 		return this.parsedData.dialogue
 	}
 
 	public get avatars(): readonly z.infer<
 		(typeof Data)['dataSchema']
 	>['avatars'][number][] {
-		if (!this.parsedData) {
-			throw new Error('Data not parsed yet')
-		}
 		return this.parsedData.avatars
 	}
 
@@ -66,14 +55,7 @@ export class Data {
 		return this.dataSchema.parse(data)
 	}
 
-	public parse(data: unknown): void {
-		this.parsedData = this.static.parseData(data)
-	}
-
-	public addBase64ToEmojie(name: string, base64Data: string): void {
-		if (!this.parsedData) {
-			throw new Error('Data not parsed yet')
-		}
+	public addBase64ToEmoji(name: string, base64Data: string): void {
 		const emoji = this.parsedData.emojies.find(
 			(em: { readonly name: string }) => em.name === name,
 		)

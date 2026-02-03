@@ -1,6 +1,7 @@
 import { Container, Graphics } from 'pixi.js'
 import { type TCore, type TSpinner, TickerCallBack } from './ticker-callback.js'
 
+// Here is functions to create objects used in loading scene (all grouped)
 export const staticFunctions = {
 	createCore: (): Graphics => {
 		const color = 0x7dd3fc,
@@ -38,7 +39,7 @@ export const staticFunctions = {
 	): TickerCallBack<SpinnerLike, CoreLike>['tickCallback'] =>
 		new TickerCallBack<SpinnerLike, CoreLike>(spinner, core).tickCallback,
 	createViewObject: (): Container => new Container(),
-	generateViewObjects(): {
+	createViewObjects(): {
 		viewObject: Container
 		spinner: Graphics
 		core: Graphics
