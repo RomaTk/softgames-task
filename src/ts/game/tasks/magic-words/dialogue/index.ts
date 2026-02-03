@@ -1,164 +1,178 @@
-import { LayoutContainer, ScrollSpring } from '@pixi/layout/components'
 import type { Data as DataFromEndpoint } from '../data.js'
 import { ErrorCatcher } from '../../../error-catcher.js'
-import { Message } from './message/index.js'
-import { getGrouppedStaticFunctions } from './message/static-functions/index.js'
 import { Texture } from 'pixi.js'
-import { PreciseSizeHelper } from './message/message-text/precise-size-helper/index.js'
-import { styleContentParser } from './message/message-text/precise-size-helper/style-content-parser.js'
-import { PreciseSizeHelperCache } from './message/message-text/precise-size-helper/cache.js'
-
-const preciseHelper = new PreciseSizeHelper(
-	styleContentParser,
-	new PreciseSizeHelperCache<DOMRect>(10),
-)
 
 export type TSize = {
 	readonly width: number
 	readonly height: number
 }
 
+export type TMessageData = {
+	readonly author: {
+		readonly name: string
+		readonly texture: Texture
+	}
+	readonly position: 'left' | 'right'
+	readonly text: string
+}
+
 export type TMessageLike = {
 	readonly viewObject: unknown
+	readonly resize: () => Promise<void>
+	readonly destroy: () => void
+	readonly afterInit: Promise<void>
 }
 
-export type TViewObjectLike<
-	MessageLike extends { readonly viewObject: unknown },
-> = {
-	readonly addChild: (
-		...children: readonly MessageLike['viewObject'][]
-	) => void
+export type TViewObjectLike<MessageViewObjectLike> = {
+	readonly layout: {
+		readonly setStyle: (style: {
+			readonly width: number
+			readonly height: number
+		}) => void
+	} | null
+	readonly addChild: (...children: readonly MessageViewObjectLike[]) => void
+	readonly destroy: (options: true) => void
 }
 
-// Take into account that this class can be used only after initialization of application with layout plugin
-export class Dialogue<
-	SizeLike extends TSize,
-	Data extends DataFromEndpoint,
-	MessageLike extends TMessageLike,
-> {
-	public readonly viewObject: TViewObjectLike<MessageLike>
-	protected readonly data: Data
-	protected readonly messages: readonly MessageLike[]
-	protected readonly scrollSpring: ScrollSpring
-	protected readonly size: SizeLike
-
-	public constructor(size: SizeLike, data: Data) {
-		this.size = size
-		this.scrollSpring = new ScrollSpring({
-			damp: 0.7,
-			max: 200,
-			springiness: 0.15,
-		})
-		this.viewObject = new LayoutContainer({
-			layout: {
-				overflow: 'scroll',
-			},
-			trackpad: {
-				constrain: true,
-				disableEasing: false,
-				maxSpeed: 400,
-				yEase: this.scrollSpring,
-			},
-		})
-		this.data = data
-		this.messages = this.createMessages()
-		this.viewObject.addChild(...this.messages.map((msg) => msg.viewObject))
-		// HACK Here alpha is used as hack (look more in message (wrap + layout problem) )
-		this.viewObject.alpha = 0.001
-		this.viewObject.layout = {
-			display: 'flex',
-			flexDirection: 'column',
+export type TOptions<SizeLike, MessageLike, ScrollSpringLike, ViewObjectLike> =
+	{
+		readonly create: {
+			readonly viewObject: (
+				scrollSpring: ScrollSpringLike,
+			) => ViewObjectLike
+			readonly scrollSpring: () => ScrollSpringLike
+			readonly message: (messageData: TMessageData) => MessageLike
+			readonly
 		}
-
-		this.viewObject.alpha = 1
-		this.resize()
+		readonly size: SizeLike
 	}
 
-	public resize(): void {
-		this.viewObject.layout = {
-			height: this.size.height,
-			width: this.size.width,
-		}
-		this.messages.forEach((message: { readonly resize: () => void }) => {
-			message.resize()
-		})
+export class Dialogue<
+	SizeLike extends TSize,
+	MessageLike extends TMessageLike,
+	ScrollSpringLike,
+	ViewObjectLike extends TViewObjectLike<MessageLike['viewObject']>,
+	Data extends DataFromEndpoint,
+> {
+	public readonly viewObject: ViewObjectLike
+	protected readonly data: Data
+	protected readonly messages: readonly MessageLike[]
+	protected readonly scrollSpring: ScrollSpringLike
+	protected readonly size: SizeLike
+	protected readonly initPromise: Promise<void>
+
+	public constructor(
+		options: TOptions<
+			SizeLike,
+			MessageLike,
+			ScrollSpringLike,
+			ViewObjectLike
+		>,
+		data: Data,
+	) {
+		this.size = options.size
+		this.scrollSpring = options.create.scrollSpring()
+		this.viewObject = options.create.viewObject(this.scrollSpring)
+		this.data = data
+		this.messages = this.createMessages(options.create.message)
+		this.viewObject.addChild(...this.messages.map((msg) => msg.viewObject))
+		this.initPromise = this.init()
+	}
+
+	public get afterInit(): Promise<void> {
+		return this.initPromise
+	}
+
+	public async resize(): Promise<void> {
+		this.resizeOnlyViewObject()
+		await Promise.all(
+			this.messages.map(
+				async (message): Promise<void> => message.resize(),
+			),
+		)
 	}
 
 	public destroy(): void {
-		this.messages.forEach((message: { readonly destroy: () => void }) => {
+		this.messages.forEach((message) => {
 			message.destroy()
 		})
 		this.viewObject.destroy(true)
 	}
 
-	protected createMessages(): MessageLike[] {
+	protected async init(): Promise<void> {
+		this.resizeOnlyViewObject()
+		await Promise.all(
+			this.messages.map(
+				async (message): Promise<void> => message.afterInit,
+			),
+		)
+	}
+
+	protected resizeOnlyViewObject(): void {
+		if (this.viewObject.layout === null) {
+			throw new Error('Layout is not initialized yet')
+		}
+		this.viewObject.layout.setStyle({
+			height: this.size.height,
+			width: this.size.width,
+		})
+	}
+
+	protected createMessages(
+		createMessage: (messageData: TMessageData) => MessageLike,
+	): MessageLike[] {
 		const messages: MessageLike[] = []
-		for (const messageData of this.data.dialogue) {
-			messages.push(this.createMessage(messageData))
+		for (const dialogueData of this.data.dialogue) {
+			messages.push(createMessage(this.getMessageData(dialogueData)))
 		}
 		return messages
 	}
 
-	// eslint-disable-next-line max-lines-per-function
-	protected createMessage(messageData: {
-		readonly name: string
-		readonly text: string
-	}): MessageLike {
-		const avatar = (():
-			| {
-					readonly name: string
-					readonly position: 'left' | 'right'
-					readonly url: string
-			  }
-			| undefined => {
-			const avatars: readonly {
-				readonly name: string
-				readonly position: 'left' | 'right'
-				readonly url: string
-			}[] = this.data.avatars
-			return avatars.find((av) => av.name === messageData.name)
-		})()
-
-		if (!avatar) {
+	protected getAvatarDataByName(name: string): Data['avatars'][number] {
+		const avatarData = this.data.avatars.find(
+			(av: { readonly name: string }) => av.name === name,
+		)
+		if (!avatarData) {
 			try {
-				throw new Error(
-					`Avatar for name "${messageData.name}" not found`,
-				)
+				throw new Error(`Avatar for name "${name}" not found`)
 			} catch (err) {
 				ErrorCatcher.instance.throw(err, true)
 			}
+
+			return {
+				name: 'unknown',
+				position: ((): 'left' | 'right' => {
+					const equalChance = 0.5
+					if (Math.random() < equalChance) {
+						return 'left'
+					}
+					return 'right'
+				})(),
+				url: '',
+			}
 		}
 
-		return new Message({
-			mapEmojiToBase64: {
-				get: (name: string) => this.data.getEmojieData(name)?.base64,
+		return avatarData
+	}
+
+	protected getMessageData(dialogueData: {
+		readonly name: string
+		readonly text: string
+	}): TMessageData {
+		const avatar = this.getAvatarDataByName(dialogueData.name)
+		return {
+			author: {
+				name: dialogueData.name,
+				texture: ((): Texture => {
+					const { url } = avatar
+					if (url === '') {
+						return Texture.WHITE
+					}
+					return Texture.from(url)
+				})(),
 			},
-			messageData: {
-				author: {
-					name: messageData.name,
-					texture: ((): Texture => {
-						const url = avatar?.url
-						if (typeof url === 'undefined') {
-							return Texture.WHITE
-						}
-						return Texture.from(url)
-					})(),
-				},
-				position:
-					avatar?.position ??
-					((): 'left' | 'right' => {
-						const equalChance = 0.5
-						if (Math.random() < equalChance) {
-							return 'left'
-						}
-						return 'right'
-					})(),
-				text: messageData.text,
-			},
-			staticFunctions: getGrouppedStaticFunctions(preciseHelper),
-			throwNotCritical: (err: unknown): void => {
-				ErrorCatcher.instance.throw(err, true)
-			},
-		})
+			position: avatar.position,
+			text: dialogueData.text,
+		}
 	}
 }

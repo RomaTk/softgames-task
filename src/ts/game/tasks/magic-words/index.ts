@@ -2,23 +2,51 @@ import { Container, Ticker, type TickerCallback } from 'pixi.js'
 import { Dialogue } from './dialogue/index.js'
 import { LoadView } from './load/index.js'
 import { Loader } from './loader.js'
-import { staticFunctions } from './load/static-fuctions.js'
+import { staticFunctions as loadSceneStaticFunctions } from './load/static-fuctions.js'
+import { getGrouppedOptions as getGrouppedOptionsDialogue } from './dialogue/static-functions/grouped-options.js'
+import { PreciseSizeHelperCache } from './dialogue/message/message-text/precise-size-helper/cache.js'
+import { PreciseSizeHelper } from './dialogue/message/message-text/precise-size-helper/index.js'
+import { styleContentParser } from './dialogue/message/message-text/precise-size-helper/style-content-parser.js'
+import { ErrorCatcher } from '../../error-catcher.js'
 
 export type TSize = {
 	readonly width: number
 	readonly height: number
 }
 
+const preciseHelper = new PreciseSizeHelper(
+	styleContentParser,
+	new PreciseSizeHelperCache<DOMRect>(10),
+)
+
 export class MagicWordsTask<SizeLike extends TSize> {
 	public readonly viewObject: Container
 	public readonly afterInitPromise: Promise<void>
 	protected readonly loader: Loader
 	protected readonly scenes: {
-		dialogue?: Dialogue<SizeLike, Loader['data']>
+		dialogue?: Dialogue<
+			SizeLike,
+			ReturnType<
+				ReturnType<
+					typeof getGrouppedOptionsDialogue<SizeLike>
+				>['create']['message']
+			>,
+			ReturnType<
+				ReturnType<
+					typeof getGrouppedOptionsDialogue<SizeLike>
+				>['create']['scrollSpring']
+			>,
+			ReturnType<
+				ReturnType<
+					typeof getGrouppedOptionsDialogue<SizeLike>
+				>['create']['viewObject']
+			>,
+			Loader['data']
+		>
 		load?: LoadView<
-			ReturnType<(typeof staticFunctions)['createCore']>,
-			ReturnType<(typeof staticFunctions)['createSpinner']>,
-			ReturnType<(typeof staticFunctions)['createViewObject']>,
+			ReturnType<(typeof loadSceneStaticFunctions)['createCore']>,
+			ReturnType<(typeof loadSceneStaticFunctions)['createSpinner']>,
+			ReturnType<(typeof loadSceneStaticFunctions)['createViewObject']>,
 			TickerCallback<Ticker>,
 			Ticker,
 			SizeLike
@@ -58,7 +86,11 @@ export class MagicWordsTask<SizeLike extends TSize> {
 	}
 
 	protected async init(): Promise<void> {
-		const load = new LoadView(staticFunctions, this.size, Ticker.shared)
+		const load = new LoadView(
+			loadSceneStaticFunctions,
+			this.size,
+			Ticker.shared,
+		)
 		this.viewObject.addChild(load.viewObject)
 		this.scenes.load = load
 		try {
@@ -74,7 +106,21 @@ export class MagicWordsTask<SizeLike extends TSize> {
 	}
 
 	protected initAfterLoad(): void {
-		this.scenes.dialogue = new Dialogue(this.size, this.data)
+		this.scenes.dialogue = new Dialogue(
+			{
+				...getGrouppedOptionsDialogue<SizeLike>(this.size, {
+					mapEmojiToBase64: {
+						get: (name: string) =>
+							this.data.getEmojieData(name)?.base64,
+					},
+					preciseSizeHelper: preciseHelper,
+					throwNotCritical: (err: unknown) => {
+						ErrorCatcher.instance.throw(err, true)
+					},
+				}),
+			},
+			this.data,
+		)
 		this.viewObject.addChild(this.scenes.dialogue.viewObject)
 		this.destroyLoadForTask()
 	}
