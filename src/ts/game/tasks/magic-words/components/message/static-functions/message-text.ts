@@ -1,11 +1,11 @@
 import { MessageText, type TPreciseSizeHelper } from '../message-text/index.js'
 import { HTMLText } from 'pixi.js'
 
-export const create = (
+export const create = <PSizeHelperLike extends TPreciseSizeHelper<HTMLText>>(
 	text: string,
-	presiseSizeHelper: TPreciseSizeHelper<HTMLText>,
-): MessageText<HTMLText, TPreciseSizeHelper<HTMLText>> =>
-	new MessageText<HTMLText, TPreciseSizeHelper<HTMLText>>(
+	presiseSizeHelper: PSizeHelperLike,
+): MessageText<HTMLText, PSizeHelperLike> =>
+	new MessageText<HTMLText, PSizeHelperLike>(
 		new HTMLText({
 			style: {
 				fill: '#3495eb',

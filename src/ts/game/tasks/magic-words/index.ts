@@ -1,13 +1,14 @@
 import { Container, Ticker, type TickerCallback } from 'pixi.js'
-import { Dialogue } from './dialogue/index.js'
-import { LoadView } from './load/index.js'
+import { Dialogue } from './components/dialogue/index.js'
+import { LoadView } from './components/load/index.js'
 import { Loader } from './loader.js'
-import { staticFunctions as loadSceneStaticFunctions } from './load/static-fuctions.js'
-import { getGrouppedOptions as getGrouppedOptionsDialogue } from './dialogue/static-functions/grouped-options.js'
-import { PreciseSizeHelperCache } from './dialogue/message/message-text/precise-size-helper/cache.js'
-import { PreciseSizeHelper } from './dialogue/message/message-text/precise-size-helper/index.js'
-import { styleContentParser } from './dialogue/message/message-text/precise-size-helper/style-content-parser.js'
+import { staticFunctions as loadSceneStaticFunctions } from './components/load/static-fuctions.js'
+import { getGrouppedOptions as getGrouppedOptionsDialogue } from './components/dialogue/static-functions/grouped-options.js'
+import { PreciseSizeHelperCache } from './components/message/message-text/precise-size-helper/cache.js'
+import { PreciseSizeHelper } from './components/message/message-text/precise-size-helper/index.js'
+import { styleContentParser } from './components/message/message-text/precise-size-helper/style-content-parser.js'
 import { ErrorCatcher } from '../../error-catcher.js'
+import { Data } from './data.js'
 
 export type TSize = {
 	readonly width: number
@@ -24,30 +25,7 @@ export class MagicWordsTask<SizeLike extends TSize> {
 	public readonly afterInitPromise: Promise<void>
 	protected readonly loader: Loader
 	protected readonly scenes: {
-		dialogue?: Dialogue<
-			SizeLike,
-			ReturnType<
-				ReturnType<
-					typeof getGrouppedOptionsDialogue<SizeLike>
-				>['create']['message']
-			>,
-			ReturnType<
-				ReturnType<
-					typeof getGrouppedOptionsDialogue<SizeLike>
-				>['create']['scrollSpring']
-			>,
-			ReturnType<
-				ReturnType<
-					typeof getGrouppedOptionsDialogue<SizeLike>
-				>['create']['viewObject']
-			>,
-			ReturnType<
-				ReturnType<
-					typeof getGrouppedOptionsDialogue<SizeLike>
-				>['getAvatarTexture']
-			>,
-			Loader['data']
-		>
+		dialogue?: Dialogue<SizeLike, Data>
 		load?: LoadView<
 			ReturnType<(typeof loadSceneStaticFunctions)['createCore']>,
 			ReturnType<(typeof loadSceneStaticFunctions)['createSpinner']>,

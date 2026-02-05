@@ -1,13 +1,6 @@
-export type TThrowNotCritical = (err: unknown) => void
-
 export type TData<AvatarData, DialogueData> = {
 	readonly dialogue: readonly DialogueData[]
 	readonly avatars: readonly AvatarData[]
-}
-
-export type TOptions<DataLike, ThrowNotCriticalLike> = {
-	readonly data: DataLike
-	readonly throwNotCritical: ThrowNotCriticalLike
 }
 
 export type TGetAvatarTexture<TextureLike> = (url: string | null) => TextureLike
@@ -38,14 +31,11 @@ export abstract class MessagesBuilder<
 	AvatarDataLike extends TAvatarData,
 	DialogueDataLike extends TDialogueData,
 	DataLike extends TData<AvatarDataLike, DialogueDataLike>,
-	ThrowNotCriticalLike extends TThrowNotCritical,
 > {
 	protected readonly data: DataLike
-	protected readonly throwNotCritical: ThrowNotCriticalLike
 
-	public constructor(options: TOptions<DataLike, ThrowNotCriticalLike>) {
-		this.data = options.data
-		this.throwNotCritical = options.throwNotCritical
+	public constructor(data: DataLike) {
+		this.data = data
 	}
 
 	public createMessages(): MessageLike[] {
@@ -102,4 +92,5 @@ export abstract class MessagesBuilder<
 	protected abstract createMessage(
 		messageData: TMessageData<TextureLike>,
 	): MessageLike
+	protected abstract throwNotCritical(err: unknown): void
 }
