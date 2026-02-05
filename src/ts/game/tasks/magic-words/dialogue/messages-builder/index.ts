@@ -5,23 +5,12 @@ export type TData<AvatarData, DialogueData> = {
 	readonly avatars: readonly AvatarData[]
 }
 
-export type TOptions<
-	DataLike,
-	ThrowNotCriticalLike,
-	GetAvatarTextureLike,
-	CreateMessageLike,
-> = {
+export type TOptions<DataLike, ThrowNotCriticalLike> = {
 	readonly data: DataLike
 	readonly throwNotCritical: ThrowNotCriticalLike
-	readonly getAvatarTexture: GetAvatarTextureLike
-	readonly createMessage: CreateMessageLike
 }
 
 export type TGetAvatarTexture<TextureLike> = (url: string | null) => TextureLike
-
-export type TCreateMessage<MessageDataLike, MessageLike> = (
-	messageData: MessageDataLike,
-) => MessageLike
 
 export type TMessageData<TextureLike> = {
 	readonly author: {
@@ -43,36 +32,20 @@ export type TDialogueData = {
 	readonly text: string
 }
 
-export class MessagesBuilder<
+export abstract class MessagesBuilder<
 	MessageLike,
 	TextureLike,
-	CreateMessageLike extends TCreateMessage<
-		TMessageData<TextureLike>,
-		MessageLike
-	>,
 	AvatarDataLike extends TAvatarData,
 	DialogueDataLike extends TDialogueData,
 	DataLike extends TData<AvatarDataLike, DialogueDataLike>,
 	ThrowNotCriticalLike extends TThrowNotCritical,
-	GetAvatarTextureLike extends TGetAvatarTexture<TextureLike>,
 > {
 	protected readonly data: DataLike
 	protected readonly throwNotCritical: ThrowNotCriticalLike
-	protected readonly getAvatarTexture: GetAvatarTextureLike
-	protected readonly createMessage: CreateMessageLike
 
-	public constructor(
-		options: TOptions<
-			DataLike,
-			ThrowNotCriticalLike,
-			GetAvatarTextureLike,
-			CreateMessageLike
-		>,
-	) {
+	public constructor(options: TOptions<DataLike, ThrowNotCriticalLike>) {
 		this.data = options.data
 		this.throwNotCritical = options.throwNotCritical
-		this.getAvatarTexture = options.getAvatarTexture
-		this.createMessage = options.createMessage
 	}
 
 	public createMessages(): MessageLike[] {
@@ -123,4 +96,10 @@ export class MessagesBuilder<
 			text: dialogueData.text,
 		}
 	}
+
+	protected abstract getAvatarTexture(url: string | null): TextureLike
+
+	protected abstract createMessage(
+		messageData: TMessageData<TextureLike>,
+	): MessageLike
 }
