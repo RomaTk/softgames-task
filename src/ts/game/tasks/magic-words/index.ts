@@ -1,24 +1,15 @@
 import { Container, Ticker, type TickerCallback } from 'pixi.js'
-import { Dialogue } from './components/dialogue/index.js'
+import type { Data } from './data.js'
+import { Dialogue } from './dialogue.js'
+import { ErrorCatcher } from '../../error-catcher.js'
 import { LoadView } from './components/load/index.js'
 import { Loader } from './loader.js'
 import { staticFunctions as loadSceneStaticFunctions } from './components/load/static-fuctions.js'
-import { getGrouppedOptions as getGrouppedOptionsDialogue } from './components/dialogue/static-functions/grouped-options.js'
-import { PreciseSizeHelperCache } from './components/message/message-text/precise-size-helper/cache.js'
-import { PreciseSizeHelper } from './components/message/message-text/precise-size-helper/index.js'
-import { styleContentParser } from './components/message/message-text/precise-size-helper/style-content-parser.js'
-import { ErrorCatcher } from '../../error-catcher.js'
-import { Data } from './data.js'
 
 export type TSize = {
 	readonly width: number
 	readonly height: number
 }
-
-const preciseHelper = new PreciseSizeHelper(
-	styleContentParser,
-	new PreciseSizeHelperCache<DOMRect>(10),
-)
 
 export class MagicWordsTask<SizeLike extends TSize> {
 	public readonly viewObject: Container
@@ -56,9 +47,9 @@ export class MagicWordsTask<SizeLike extends TSize> {
 		return this.loader.data
 	}
 
-	public resize(): void {
+	public async resize(): Promise<void> {
 		this.scenes.load?.resize()
-		this.scenes.dialogue?.resize()
+		await this.scenes.dialogue?.resize()
 	}
 
 	public async destroy(): Promise<void> {
@@ -89,27 +80,9 @@ export class MagicWordsTask<SizeLike extends TSize> {
 	}
 
 	protected initAfterLoad(): void {
-		this.scenes.dialogue = new Dialogue(
-			{
-				...getGrouppedOptionsDialogue<SizeLike>(
-					this.size,
-					{
-						mapEmojiToBase64: {
-							get: (name: string) =>
-								this.data.getEmojieData(name)?.base64,
-						},
-						preciseSizeHelper: preciseHelper,
-						throwNotCritical: (err: unknown) => {
-							ErrorCatcher.instance.throw(err, true)
-						},
-					},
-					(err: unknown) => {
-						ErrorCatcher.instance.throw(err, true)
-					},
-				),
-			},
-			this.data,
-		)
+		this.scenes.dialogue = new Dialogue(this.size, this.data, (err) => {
+			ErrorCatcher.instance.throw(err, true)
+		})
 		this.viewObject.addChild(this.scenes.dialogue.viewObject)
 		this.destroyLoadForTask()
 	}

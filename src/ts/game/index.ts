@@ -1,4 +1,3 @@
-/* eslint-disable max-statements */
 import '@pixi/layout'
 import * as Pixi from 'pixi.js'
 import { Application, Container } from 'pixi.js'
@@ -10,8 +9,8 @@ import { Menu } from './menu/index.js'
 import { OnTickResizeObserver } from './resize-observer.js'
 import { PhoenixFlameTask } from './tasks/phoenix-flame/index.js'
 import { PixiPlugin } from 'gsap/PixiPlugin'
-import { gsap } from 'gsap'
 import { TaskSize } from './task-size.js'
+import { gsap } from 'gsap'
 
 gsap.registerPlugin(PixiPlugin)
 PixiPlugin.registerPIXI(Pixi)
@@ -30,10 +29,10 @@ export type TTask = {
 }
 
 export class Game {
+	public readonly application: Application
 	public readonly errorCatcher: ErrorCatcher
 	protected loadPromise?: Promise<TLoadStatus>
 	protected fpsMeter?: FPSMeter
-	public readonly application: Application
 	protected readonly menu: Menu
 	protected readonly resizeObserver: OnTickResizeObserver
 	// Max size in pixels for width or height
@@ -41,10 +40,7 @@ export class Game {
 	protected readonly tasks: Set<TTask>
 	protected readonly tasksContainer: Pixi.Container
 
-	public static instance: Game
-
 	public constructor() {
-		Game.instance = this
 		this.errorCatcher = ErrorCatcher.instance
 		this.errorCatcher.actionOnError = (): void => {
 			const { parentElement } = this.application.canvas
@@ -193,10 +189,9 @@ export class Game {
 			),
 		)
 		this.tasks.add(task)
-		task.resize()
+		await task.resize()
 		this.tasksContainer.addChild(task.viewObject)
 		this.destroyTasks(MagicWordsTask)
-		// await task.display()
 	}
 
 	protected launchAceOfShadowsTask(): void {
