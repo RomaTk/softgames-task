@@ -2,13 +2,12 @@ import {
 	Message as MessageComponent,
 	type TOptions as TMessageComponentOptions,
 } from './components/message/index.js'
+import type { PreciseSizeHelper } from './precise-text-size-helper.js'
 import type { getAvatarTexture } from './components/messages-builder/static-functions/avatar-texture.js'
 import { getGrouppedStaticFunctions as getMessageGrouppedStaticFunctions } from './components/message/static-functions/index.js'
-import { preciseSizeHelper } from './precise-text-size-helper.js'
 
-export type TGMessageGroupFunct = typeof getMessageGrouppedStaticFunctions<
-	typeof preciseSizeHelper
->
+export type TGMessageGroupFunct =
+	typeof getMessageGrouppedStaticFunctions<PreciseSizeHelper>
 
 export type TOptions = Omit<
 	TMessageComponentOptions<
@@ -23,7 +22,9 @@ export type TOptions = Omit<
 	'staticFunctions'
 >
 
-export class Message extends MessageComponent<
+export class Message<
+	PSizeHelperLike extends PreciseSizeHelper = PreciseSizeHelper,
+> extends MessageComponent<
 	ReturnType<ReturnType<TGMessageGroupFunct>['create']['viewObject']>,
 	ReturnType<ReturnType<TGMessageGroupFunct>['create']['messageContainer']>,
 	ReturnType<ReturnType<TGMessageGroupFunct>['create']['authorName']>,
@@ -32,7 +33,7 @@ export class Message extends MessageComponent<
 	ReturnType<ReturnType<TGMessageGroupFunct>['create']['cornerRect']>,
 	ReturnType<typeof getAvatarTexture>
 > {
-	public constructor(options: TOptions) {
+	public constructor(options: TOptions, preciseSizeHelper: PSizeHelperLike) {
 		super({
 			...options,
 			staticFunctions:

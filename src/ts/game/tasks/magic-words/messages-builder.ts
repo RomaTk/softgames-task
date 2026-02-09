@@ -4,6 +4,7 @@ import {
 } from './components/messages-builder/index.js'
 import type { Data } from './data.js'
 import { Message } from './message.js'
+import { PreciseSizeHelper } from './precise-text-size-helper.js'
 import { getAvatarTexture } from './components/messages-builder/static-functions/avatar-texture.js'
 
 export class MessagesBuilder<
@@ -18,8 +19,9 @@ export class MessagesBuilder<
 	DataLike['dialogue'][number],
 	DataLike
 > {
-	public override readonly getAvatarTexture = getAvatarTexture
-	public override readonly throwNotCritical
+	protected preciseSizeHelper?: PreciseSizeHelper
+	protected override readonly getAvatarTexture = getAvatarTexture
+	protected override readonly throwNotCritical
 
 	public constructor(data: DataLike, throwNotCritical: ThrowNotCriticalLike) {
 		super(data)
@@ -29,12 +31,23 @@ export class MessagesBuilder<
 	public override createMessage(
 		messageData: TMessageData<ReturnType<typeof getAvatarTexture>>,
 	): Message {
-		return new Message({
-			mapEmojiToBase64: {
-				get: (name: string) => this.data.getEmojieData(name)?.base64,
+		this.preciseSizeHelper ??= new PreciseSizeHelper(
+			((): number => {
+				// I took 2 sizes per each dialogue text, as one for each orientation
+				const commonSizeChanges = ['landscape', 'portrait']
+				return this.data.dialogue.length * commonSizeChanges.length
+			})(),
+		)
+		return new Message(
+			{
+				mapEmojiToBase64: {
+					get: (name: string) =>
+						this.data.getEmojieData(name)?.base64,
+				},
+				messageData,
+				throwNotCritical: this.throwNotCritical,
 			},
-			messageData,
-			throwNotCritical: this.throwNotCritical,
-		})
+			this.preciseSizeHelper,
+		)
 	}
 }
