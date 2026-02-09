@@ -187,6 +187,10 @@ export class Game {
 				() => document.body.clientHeight,
 				() => document.body.clientWidth,
 			),
+			(err: unknown, isCritical: boolean) => {
+				//TODO change it to effect only one task
+				ErrorCatcher.instance.throw(err, !isCritical)
+			},
 		)
 		this.tasks.add(task)
 		await task.resize()

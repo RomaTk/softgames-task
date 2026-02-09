@@ -1,7 +1,6 @@
 import { Container, Ticker, type TickerCallback } from 'pixi.js'
 import type { Data } from './data.js'
 import { Dialogue } from './dialogue.js'
-import { ErrorCatcher } from '../../error-catcher.js'
 import { LoadView } from './components/load/index.js'
 import { Loader } from './loader.js'
 import { staticFunctions as loadSceneStaticFunctions } from './components/load/static-fuctions.js'
@@ -11,9 +10,14 @@ export type TSize = {
 	readonly height: number
 }
 
-export class MagicWordsTask<SizeLike extends TSize> {
+export type TThrowErrorLike = (err: unknown, isCritical: boolean) => void
+
+export class MagicWordsTask<
+	SizeLike extends TSize,
+	ThrowErrorLike extends TThrowErrorLike,
+> {
 	public readonly viewObject: Container
-	public readonly afterInitPromise: Promise<void>
+	public readonly afterInit: Promise<void>
 	protected readonly loader: Loader
 	protected readonly scenes: {
 		dialogue?: Dialogue<SizeLike, Data>
@@ -26,25 +30,19 @@ export class MagicWordsTask<SizeLike extends TSize> {
 			SizeLike
 		>
 	}
+	protected readonly throwError: ThrowErrorLike
 	// We save this data because objects are created dynamically and need the value set immediately
 	protected readonly size: SizeLike
 
-	public constructor(size: SizeLike) {
+	public constructor(size: SizeLike, throwError: ThrowErrorLike) {
 		this.size = size
+		this.throwError = throwError
 		this.loader = new Loader(
 			'https://private-624120-softgamesassignment.apiary-mock.com/v2/magicwords',
 		)
 		this.viewObject = new Container()
 		this.scenes = {}
-		this.afterInitPromise = this.init()
-	}
-
-	public get afterInit(): Promise<void> {
-		return this.afterInitPromise
-	}
-
-	protected get data(): Loader['data'] {
-		return this.loader.data
+		this.afterInit = this.init()
 	}
 
 	public async resize(): Promise<void> {
@@ -60,31 +58,57 @@ export class MagicWordsTask<SizeLike extends TSize> {
 	}
 
 	protected async init(): Promise<void> {
-		const load = new LoadView(
+		if (this.viewObject.destroyed) {
+			return
+		}
+		this.initLoadScene()
+		await this.initLoder()
+		await this.initDialogueScene()
+		this.destroyLoadForTask()
+	}
+
+	protected initLoadScene(): void {
+		this.scenes.load = new LoadView(
 			loadSceneStaticFunctions,
 			this.size,
 			Ticker.shared,
 		)
-		this.viewObject.addChild(load.viewObject)
-		this.scenes.load = load
+		this.viewObject.addChild(this.scenes.load.viewObject)
+	}
+
+	protected async initLoder(): Promise<void> {
+		if (this.viewObject.destroyed) {
+			return
+		}
 		try {
 			await this.loader.afterLoad
-			this.initAfterLoad()
 		} catch (err: unknown) {
 			if (err === this.loader.destroyDuringLoadingError) {
 				// Expected behavior, do nothing
 				return
 			}
-			throw err
+			// Here not all data loaded
+			await this.destroy()
+			this.throwError(err, true)
 		}
 	}
 
-	protected initAfterLoad(): void {
-		this.scenes.dialogue = new Dialogue(this.size, this.data, (err) => {
-			ErrorCatcher.instance.throw(err, true)
-		})
+	protected async initDialogueScene(): Promise<void> {
+		if (this.viewObject.destroyed) {
+			return
+		}
+		this.scenes.dialogue = new Dialogue(
+			this.size,
+			this.loader.data,
+			(err) => {
+				this.throwError(err, false)
+			},
+		)
+		// We need to add to scene, so scaling will happen (only after that object will be inited)
+		this.scenes.dialogue.viewObject.alpha = 0
 		this.viewObject.addChild(this.scenes.dialogue.viewObject)
-		this.destroyLoadForTask()
+		await this.scenes.dialogue.afterInit
+		this.scenes.dialogue.viewObject.alpha = 1
 	}
 
 	protected destroyLoadForTask(): void {

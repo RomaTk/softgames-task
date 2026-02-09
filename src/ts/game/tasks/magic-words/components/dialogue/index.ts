@@ -36,7 +36,6 @@ export type TOptions<SizeLike, MessagesLike, ScrollSpringLike, ViewObjectLike> =
 export class Dialogue<
 	SizeLike extends TSize,
 	MessageLike extends TMessageLike,
-	// TODO convert to object
 	MessagesLike extends readonly MessageLike[],
 	ScrollSpringLike,
 	ViewObjectLike extends TViewObjectLike<MessageLike['viewObject']>,

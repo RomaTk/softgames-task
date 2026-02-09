@@ -8,6 +8,9 @@ import { getAvatarTexture } from './components/messages-builder/static-functions
 
 export class MessagesBuilder<
 	DataLike extends Data = Data,
+	ThrowNotCriticalLike extends (err: unknown) => void = (
+		err: unknown,
+	) => void,
 > extends MessagesBuilderComponent<
 	Message,
 	ReturnType<typeof getAvatarTexture>,
@@ -18,10 +21,7 @@ export class MessagesBuilder<
 	public override readonly getAvatarTexture = getAvatarTexture
 	public override readonly throwNotCritical
 
-	public constructor(
-		data: DataLike,
-		throwNotCritical: (err: unknown) => void,
-	) {
+	public constructor(data: DataLike, throwNotCritical: ThrowNotCriticalLike) {
 		super(data)
 		this.throwNotCritical = throwNotCritical
 	}
