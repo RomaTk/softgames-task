@@ -2,6 +2,7 @@ import {
 	Dialogue as DialogueComponent,
 	type TSize,
 } from './components/dialogue/index.js'
+import { Container } from 'pixi.js'
 import type { Data } from './data.js'
 import { MessagesBuilder } from './messages-builder.js'
 import { create as createScrollSpring } from './components/dialogue/static-functions/scroll-spring.js'
@@ -17,6 +18,8 @@ export class Dialogue<
 	ReturnType<typeof createScrollSpring>,
 	ReturnType<typeof createViewObject>
 > {
+	protected readonly minWidthViewObject: Container
+
 	public constructor(
 		size: SizeLike,
 		data: DataLike,
@@ -34,5 +37,25 @@ export class Dialogue<
 			},
 			size,
 		})
+
+		// Here we change structure, so even in really small screen it looks good
+		this.minWidthViewObject = new Container()
+		this.minWidthViewObject.addChild(
+			...this.messages.map(
+				<ViewObjectLike extends Container>(message: {
+					readonly viewObject: ViewObjectLike
+				}): ViewObjectLike => {
+					message.viewObject.removeFromParent()
+					return message.viewObject
+				},
+			),
+		)
+		this.minWidthViewObject.layout = {
+			flexDirection: 'column',
+			flexShrink: 0,
+			minWidth: 200,
+			width: '100%',
+		}
+		this.viewObject.addChild(this.minWidthViewObject)
 	}
 }

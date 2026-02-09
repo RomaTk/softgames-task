@@ -5,7 +5,10 @@ export type TBatchableHTMLText<HTMLTextLike extends HTMLText> =
 	HTMLTextLike['_gpuData'][number]
 
 export type TPreciseSizeHelper<HTMLTextLike> = {
-	readonly getBoundingClientRect: (htmlText: HTMLTextLike) => DOMRect
+	readonly getBoundingClientRect: (
+		htmlText: HTMLTextLike,
+		notWrappedWidth: number,
+	) => DOMRect
 }
 
 // This is a specific class to wrap HTMLText to be used in layout container
@@ -170,6 +173,7 @@ export class MessageText<
 		this.text.style.wordWrapWidth = this.space.width
 		const preciseWidth = this.presiseSizeHelper.getBoundingClientRect(
 			this.text,
+			this.defaultWidth,
 		).width
 		this.space.layout = {
 			width: preciseWidth,

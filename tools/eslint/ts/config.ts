@@ -91,7 +91,6 @@ const config: TEslintConfig[] = [
 							from: 'package',
 							name: [
 								'Ticker',
-								'Container',
 								'Sprite',
 								'Application',
 								'Texture',

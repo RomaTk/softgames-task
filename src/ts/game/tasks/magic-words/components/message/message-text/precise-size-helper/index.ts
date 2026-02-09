@@ -24,17 +24,38 @@ export class PreciseSizeHelper<CacheLike extends TCache<DOMRect>> {
 		this.cache = cache
 	}
 
+	// For cases when size of window less then calculated text
+	protected static getHugeDiv(notWrappedWidth: number): HTMLDivElement {
+		const div = document.createElement('div')
+
+		div.style.position = 'absolute'
+		div.style.visibility = 'hidden'
+		div.style.pointerEvents = 'none'
+
+		div.style.width = `${notWrappedWidth}px`
+		div.style.height = `auto`
+
+		return div
+	}
+
 	public clean(): void {
 		this.cache.clear()
 	}
 
-	public getBoundingClientRect(htmlText: THtmlText): DOMRect {
+	public getBoundingClientRect(
+		htmlText: THtmlText,
+		notWrappedWidth: number,
+	): DOMRect {
 		const { cssStyle } = htmlText.style,
 			{ text } = htmlText
 
 		return (this.getOldBoundingRect({ cssStyle, text }).rect ??=
 			((): DOMRect => {
-				const rect = this.getNewBoundingRect(text, cssStyle)
+				const rect = this.getNewBoundingRect(
+					text,
+					cssStyle,
+					notWrappedWidth,
+				)
 				this.cache.add(text, cssStyle, rect)
 				return rect
 			})())
@@ -50,16 +71,22 @@ export class PreciseSizeHelper<CacheLike extends TCache<DOMRect>> {
 		return properties
 	}
 
-	protected getNewBoundingRect(text: string, cssStyle: string): DOMRect {
+	protected getNewBoundingRect(
+		text: string,
+		cssStyle: string,
+		notWrappedWidth: number,
+	): DOMRect {
 		const div = this.getDiv(cssStyle, text),
+			hugeDiv = PreciseSizeHelper.getHugeDiv(notWrappedWidth),
 			range = document.createRange()
 
-		document.body.appendChild(div)
+		hugeDiv.appendChild(div)
+		document.body.appendChild(hugeDiv)
 		range.selectNodeContents(div)
 		return ((): DOMRect => {
 			const rect = range.getBoundingClientRect()
 			// Clean up
-			document.body.removeChild(div)
+			document.body.removeChild(hugeDiv)
 			return rect
 		})()
 	}
