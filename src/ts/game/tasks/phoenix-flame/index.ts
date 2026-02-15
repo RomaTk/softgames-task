@@ -1,5 +1,5 @@
 import { type Application, Container, type Texture } from 'pixi.js'
-import { LikeFireParticle } from './one-particle.js'
+import { FireParticle } from './fire-particle/index.js'
 import { createFireTexture } from './create-texture.js'
 import { gsap } from 'gsap'
 
@@ -10,14 +10,16 @@ export class PhoenixFlameTask<App extends Application> {
 	protected readonly texture: Texture
 	protected readonly textureSize: number
 	protected readonly maxParticles: number
-	protected readonly particles: Set<LikeFireParticle>
+	protected readonly particles: Set<
+		FireParticle<ReturnType<typeof createFireTexture>>
+	>
 
 	public constructor(app: App) {
 		this.viewObject = new Container()
 		this.textureSize = 128
 		this.particles = new Set()
 		this.maxParticles = 10
-		this.texture = createFireTexture(app, this.textureSize)
+		this.texture = createFireTexture(() => app, this.textureSize)
 		this.spawnTime = 0.08
 	}
 
@@ -40,7 +42,7 @@ export class PhoenixFlameTask<App extends Application> {
 	public display(): void {
 		const increment = 1
 		for (let index = 0; index < this.maxParticles; index += increment) {
-			const particle = new LikeFireParticle(this.texture, () => {
+			const particle = new FireParticle(this.texture, () => {
 				const chance = 0.7
 				if (Math.random() < chance) {
 					particle.activate()
