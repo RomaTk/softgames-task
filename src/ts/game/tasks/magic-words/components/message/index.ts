@@ -36,7 +36,7 @@ export type TStaticFunctions<
 		readonly viewObject: (position: 'left' | 'right') => ViewObjectLike
 		readonly authorName: (name: string) => AutorNameLike
 		readonly messageText: (text: string) => MessageTextLike
-		readonly avatar: (texture: TextureLike) => AvatarLike
+		readonly avatar: (texture: () => TextureLike) => AvatarLike
 		readonly cornerRect: (position: 'left' | 'right') => CornerRectLike
 		readonly messageContainer: () => MessageContainerLike
 	}
@@ -126,7 +126,7 @@ export class Message<
 		this.messageText =
 			opt.staticFunctions.create.messageText(htmlTextWithEmojies)
 		this.authorAvatar = opt.staticFunctions.create.avatar(
-			opt.messageData.author.texture,
+			() => opt.messageData.author.texture,
 		)
 		this.cornerRect = opt.staticFunctions.create.cornerRect(
 			opt.messageData.position,

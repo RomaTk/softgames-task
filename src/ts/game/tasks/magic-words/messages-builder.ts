@@ -12,6 +12,8 @@ export class MessagesBuilder<
 	ThrowNotCriticalLike extends (err: unknown) => void = (
 		err: unknown,
 	) => void,
+	MessageData extends TMessageData<ReturnType<typeof getAvatarTexture>> =
+		TMessageData<ReturnType<typeof getAvatarTexture>>,
 > extends MessagesBuilderComponent<
 	Message,
 	ReturnType<typeof getAvatarTexture>,
@@ -28,9 +30,7 @@ export class MessagesBuilder<
 		this.throwNotCritical = throwNotCritical
 	}
 
-	public override createMessage(
-		messageData: TMessageData<ReturnType<typeof getAvatarTexture>>,
-	): Message {
+	public override createMessage(messageData: MessageData): Message {
 		this.preciseSizeHelper ??= new PreciseSizeHelper(
 			((): number => {
 				// I took 2 sizes per each dialogue text, as one for each orientation

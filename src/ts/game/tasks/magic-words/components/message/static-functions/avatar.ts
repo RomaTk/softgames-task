@@ -1,7 +1,7 @@
 import { LayoutSprite } from '@pixi/layout/components'
 import type { Texture } from 'pixi.js'
 
-export const create = (texture: Texture): LayoutSprite =>
+export const create = (getTexture: () => Texture): LayoutSprite =>
 	new LayoutSprite({
 		layout: {
 			alignSelf: 'flex-end',
@@ -12,5 +12,5 @@ export const create = (texture: Texture): LayoutSprite =>
 			objectFit: 'cover',
 			width: '10%',
 		},
-		texture,
+		texture: getTexture(),
 	})

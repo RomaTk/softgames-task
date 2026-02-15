@@ -24,6 +24,7 @@ export type TOptions = Omit<
 
 export class Message<
 	PSizeHelperLike extends PreciseSizeHelper = PreciseSizeHelper,
+	Options extends TOptions = TOptions,
 > extends MessageComponent<
 	ReturnType<ReturnType<TGMessageGroupFunct>['create']['viewObject']>,
 	ReturnType<ReturnType<TGMessageGroupFunct>['create']['messageContainer']>,
@@ -33,7 +34,7 @@ export class Message<
 	ReturnType<ReturnType<TGMessageGroupFunct>['create']['cornerRect']>,
 	ReturnType<typeof getAvatarTexture>
 > {
-	public constructor(options: TOptions, preciseSizeHelper: PSizeHelperLike) {
+	public constructor(options: Options, preciseSizeHelper: PSizeHelperLike) {
 		super({
 			...options,
 			staticFunctions:
