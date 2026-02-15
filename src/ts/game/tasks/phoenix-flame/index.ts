@@ -21,9 +21,16 @@ export class PhoenixFlameTask<App extends Application> {
 		this.maxParticles = 10
 		this.texture = createFireTexture(() => app, this.textureSize)
 		this.spawnTime = 0.08
+		this.init()
 	}
 
 	public resize(width: number, height: number): void {
+		if (this.viewObject.destroyed) {
+			throw new Error(
+				'Object is destroyed, so resize can not be executed',
+			)
+		}
+
 		const centerFactor = 0.5,
 			maxHeight = 600,
 			maxWidthHeight = 200,
@@ -39,7 +46,19 @@ export class PhoenixFlameTask<App extends Application> {
 		)
 	}
 
-	public display(): void {
+	public destroy(): void {
+		if (this.viewObject.destroyed) {
+			return
+		}
+		this.particles.forEach((particle: { readonly destroy: () => void }) => {
+			particle.destroy()
+		})
+		this.viewObject.destroy()
+		this.texture.destroy(true)
+		this.destroyDelayedSpawn()
+	}
+
+	protected init(): void {
 		const increment = 1
 		for (let index = 0; index < this.maxParticles; index += increment) {
 			const particle = new FireParticle(this.texture, () => {
@@ -55,15 +74,6 @@ export class PhoenixFlameTask<App extends Application> {
 		this.createDelayedSpawn()
 	}
 
-	public destroy(): void {
-		this.particles.forEach((particle: { readonly destroy: () => void }) => {
-			particle.destroy()
-		})
-		this.viewObject.destroy(true)
-		this.texture.destroy(true)
-		this.destroyDelayedSpawn()
-	}
-
 	protected destroyDelayedSpawn(): void {
 		this.delayedSpawn?.kill()
 		delete this.delayedSpawn
@@ -72,6 +82,9 @@ export class PhoenixFlameTask<App extends Application> {
 	protected createDelayedSpawn(): void {
 		this.destroyDelayedSpawn()
 		this.delayedSpawn = gsap.delayedCall(this.spawnTime, () => {
+			if (this.viewObject.destroyed) {
+				return
+			}
 			const deadParticle = this.particles
 				.values()
 				.find(

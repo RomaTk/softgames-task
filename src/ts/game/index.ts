@@ -217,7 +217,6 @@ export class Game {
 		const task = new PhoenixFlameTask(this.application)
 		this.tasks.add(task)
 		task.resize(document.body.clientWidth, document.body.clientHeight)
-		task.display()
 		this.tasksContainer.addChild(task.viewObject)
 		this.destroyTasks(PhoenixFlameTask)
 	}
