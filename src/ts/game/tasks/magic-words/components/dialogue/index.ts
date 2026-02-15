@@ -19,6 +19,7 @@ export type TViewObjectLike<MessageViewObjectLike> = {
 	} | null
 	readonly addChild: (...children: readonly MessageViewObjectLike[]) => void
 	readonly destroy: (options: true) => void
+	readonly destroyed: boolean
 }
 
 export type TOptions<SizeLike, MessagesLike, ScrollSpringLike, ViewObjectLike> =
@@ -67,6 +68,9 @@ export class Dialogue<
 	}
 
 	public async resize(): Promise<void> {
+		if (this.viewObject.destroyed) {
+			throw new Error('Cannot resize destroyed Dialogue instance')
+		}
 		this.resizeOnlyViewObject()
 		await Promise.all(
 			this.messages.map(
@@ -76,6 +80,9 @@ export class Dialogue<
 	}
 
 	public destroy(): void {
+		if (this.viewObject.destroyed) {
+			return
+		}
 		this.messages.forEach((message) => {
 			message.destroy()
 		})
