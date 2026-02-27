@@ -5,13 +5,12 @@ import { type Application, Container, Sprite, type Texture } from 'pixi.js'
 import { Deck, type TPropertiesForTopCard } from './deck.js'
 import { createCardBack } from './create-skin.js'
 import { gsap } from 'gsap'
-import { skewRecalculation } from './skew-recalculation/index.js'
 
 export class AceOfShadowsTask<App extends Application> {
 	public readonly viewObject: Container
-	protected decks: {
-		readonly from: Deck
-		readonly to: Deck
+	protected readonly decks: {
+		readonly from: Deck<Sprite>
+		readonly to: Deck<Sprite>
 	}
 	protected animationTimeline?: gsap.core.Timeline
 	protected readonly flyingCardsContainer: Container
