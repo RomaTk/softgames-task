@@ -206,8 +206,8 @@ export class Game {
 		this.tasks.add(task)
 		task.resize(document.body.clientWidth, document.body.clientHeight)
 		this.tasksContainer.addChild(task.viewObject)
-		await task.play()
 		this.destroyTasks(AceOfShadowsTask)
+		await task.play()
 	}
 
 	protected launchPhoenixFlameTask(): void {
