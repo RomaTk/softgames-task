@@ -25,7 +25,7 @@ export class AceOfShadowsTask<App extends Application> {
 		this.durationToFlyOneCard = 2
 		this.delayBetweenCards = 0.5
 		const cardSizeToTextureMultiplier = 1,
-			numberCards = 10
+			numberCards = 144
 		this.decks = this.createDecks(cardSizeToTextureMultiplier)
 		this.organizeViewObject()
 		this.createAndFillCards(numberCards, cardSizeToTextureMultiplier)
@@ -34,8 +34,8 @@ export class AceOfShadowsTask<App extends Application> {
 	public resize(width: number, height: number): void {
 		const centerFactor = 0.5,
 			defaultScale = 1,
-			maxHeight = 600,
-			maxWidth = 1000
+			maxHeight = 800,
+			maxWidth = 3000
 
 		this.viewObject.position.set(
 			width * centerFactor,
@@ -78,7 +78,7 @@ export class AceOfShadowsTask<App extends Application> {
 	}
 
 	protected setDecksPosition(): void {
-		const distanceFromCenterX = 400,
+		const distanceFromCenterX = 600,
 			distanceFromCenterY = 0
 		this.decks.from.position.set(-distanceFromCenterX, -distanceFromCenterY)
 		this.decks.to.position.set(distanceFromCenterX, distanceFromCenterY)

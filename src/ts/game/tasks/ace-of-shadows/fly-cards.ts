@@ -37,53 +37,42 @@ export class FlyCards<CardLike extends TCard> extends Container<
 	}
 
 	public sortCards(): void {
+		const { firstInTopContainer, topChildInBottomContainer } =
+			this.getInterestingCards()
+
+		if (!topChildInBottomContainer) {
+			return
+		}
+
+		if (!firstInTopContainer) {
+			this.topContainer.addChild(topChildInBottomContainer)
+			this.sortCards()
+			return
+		}
+
 		if (
-			!this.isAtleastTwoCardsFlying() ||
-			!this.bottomContainer.children.length
+			topChildInBottomContainer.x + topChildInBottomContainer.width <=
+			firstInTopContainer.x
 		) {
-			return
-		}
-		const ignoreIndex = ((): number => {
-				const reduceFromLengthToLastIndex = 1
-				return (
-					this.bottomContainer.children.length -
-					reduceFromLengthToLastIndex
-				)
-			})(),
-			maxXs: number[] = []
-
-		this.bottomContainer.children.forEach((child, index) => {
-			if (index >= ignoreIndex) {
-				return
-			}
-			// Ideally take real bounds, but it is too expensive, so we will just take the position and add the width
-			maxXs.push(child.x + child.width)
-		})
-
-		this.sortTopCardInBottomContainer(ignoreIndex, maxXs)
-	}
-
-	protected sortTopCardInBottomContainer(
-		topIndex: number,
-		maxXs: readonly number[],
-	): void {
-		const firstInBottomContainer = this.bottomContainer.children[topIndex]
-
-		if (!firstInBottomContainer) {
-			return
-		}
-
-		if (firstInBottomContainer.x >= Math.max(...maxXs)) {
-			this.topContainer.addChild(firstInBottomContainer)
+			this.topContainer.addChild(topChildInBottomContainer)
+			this.sortCards()
 		}
 	}
 
-	protected isAtleastTwoCardsFlying(): boolean {
-		const twoCardsCount = 2
-		return (
-			this.bottomContainer.children.length +
-				this.topContainer.children.length >=
-			twoCardsCount
-		)
+	protected getInterestingCards(): {
+		firstInTopContainer: CardLike | undefined
+		topChildInBottomContainer: CardLike | undefined
+	} {
+		const decrementForTopContainer = 1,
+			indexInBottomContainer = 0
+
+		return {
+			firstInTopContainer:
+				this.topContainer.children[
+					this.topContainer.children.length - decrementForTopContainer
+				],
+			topChildInBottomContainer:
+				this.bottomContainer.children[indexInBottomContainer],
+		}
 	}
 }
