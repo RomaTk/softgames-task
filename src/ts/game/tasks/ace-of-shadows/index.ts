@@ -34,18 +34,23 @@ export class AceOfShadowsTask<App extends Application> {
 	public resize(width: number, height: number): void {
 		const centerFactor = 0.5,
 			defaultScale = 1,
-			maxHeight = 800,
-			maxWidth = 3000
+			minHeight = 1000,
+			minWidth = 2000
 
 		this.viewObject.position.set(
 			width * centerFactor,
 			height * centerFactor,
 		)
 
-		if (width > maxWidth || height > maxHeight) {
+		if (width < minWidth || height < minHeight) {
 			this.viewObject.scale.set(
-				Math.min(maxWidth / width, maxHeight / height),
+				Math.min(width / minWidth, height / minHeight),
 			)
+			if (width < height) {
+				this.viewObject.angle = 90
+			} else {
+				this.viewObject.angle = 0
+			}
 		} else {
 			this.viewObject.scale.set(defaultScale)
 		}
