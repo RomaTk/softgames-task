@@ -55,8 +55,8 @@ export class Game {
 			tasks: [
 				{
 					label: 'Ace of Shadows',
-					launchTask: (): void => {
-						this.launchAceOfShadowsTask()
+					launchTask: async (): Promise<void> => {
+						await this.launchAceOfShadowsTask()
 					},
 				},
 				{
@@ -198,15 +198,15 @@ export class Game {
 		this.destroyTasks(MagicWordsTask)
 	}
 
-	protected launchAceOfShadowsTask(): void {
+	protected async launchAceOfShadowsTask(): Promise<void> {
 		if (this.isTaskRunning(AceOfShadowsTask)) {
 			return
 		}
 		const task = new AceOfShadowsTask(this.application)
 		this.tasks.add(task)
 		task.resize(document.body.clientWidth, document.body.clientHeight)
-		task.display()
 		this.tasksContainer.addChild(task.viewObject)
+		await task.play()
 		this.destroyTasks(AceOfShadowsTask)
 	}
 
