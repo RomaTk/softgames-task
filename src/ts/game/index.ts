@@ -9,6 +9,7 @@ import { Menu } from './menu/index.js'
 import { OnTickResizeObserver } from './resize-observer.js'
 import { PhoenixFlameTask } from './tasks/phoenix-flame/index.js'
 import { PixiPlugin } from 'gsap/PixiPlugin'
+import { TaskSize } from './task-size.js'
 import { gsap } from 'gsap'
 
 gsap.registerPlugin(PixiPlugin)
@@ -28,10 +29,10 @@ export type TTask = {
 }
 
 export class Game {
+	public readonly application: Application
 	public readonly errorCatcher: ErrorCatcher
 	protected loadPromise?: Promise<TLoadStatus>
 	protected fpsMeter?: FPSMeter
-	protected readonly application: Application
 	protected readonly menu: Menu
 	protected readonly resizeObserver: OnTickResizeObserver
 	// Max size in pixels for width or height
@@ -54,8 +55,8 @@ export class Game {
 			tasks: [
 				{
 					label: 'Ace of Shadows',
-					launchTask: (): void => {
-						this.launchAceOfShadowsTask()
+					launchTask: async (): Promise<void> => {
+						await this.launchAceOfShadowsTask()
 					},
 				},
 				{
@@ -181,24 +182,32 @@ export class Game {
 		if (this.isTaskRunning(MagicWordsTask)) {
 			return
 		}
-		const task = new MagicWordsTask()
+		const task = new MagicWordsTask(
+			new TaskSize(
+				() => document.body.clientHeight,
+				() => document.body.clientWidth,
+			),
+			(err: unknown, isCritical: boolean) => {
+				//TODO change it to effect only one task
+				ErrorCatcher.instance.throw(err, !isCritical)
+			},
+		)
 		this.tasks.add(task)
-		task.resize(document.body.clientWidth, document.body.clientHeight)
+		await task.resize()
 		this.tasksContainer.addChild(task.viewObject)
 		this.destroyTasks(MagicWordsTask)
-		await task.display()
 	}
 
-	protected launchAceOfShadowsTask(): void {
+	protected async launchAceOfShadowsTask(): Promise<void> {
 		if (this.isTaskRunning(AceOfShadowsTask)) {
 			return
 		}
 		const task = new AceOfShadowsTask(this.application)
 		this.tasks.add(task)
 		task.resize(document.body.clientWidth, document.body.clientHeight)
-		task.display()
 		this.tasksContainer.addChild(task.viewObject)
 		this.destroyTasks(AceOfShadowsTask)
+		await task.play()
 	}
 
 	protected launchPhoenixFlameTask(): void {
@@ -208,7 +217,6 @@ export class Game {
 		const task = new PhoenixFlameTask(this.application)
 		this.tasks.add(task)
 		task.resize(document.body.clientWidth, document.body.clientHeight)
-		task.display()
 		this.tasksContainer.addChild(task.viewObject)
 		this.destroyTasks(PhoenixFlameTask)
 	}

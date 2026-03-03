@@ -1,88 +1,61 @@
-import { Container, Sprite } from 'pixi.js'
+import type { TCard, TClosingProps } from './card.js'
+import { Container } from 'pixi.js'
 
-export type TPropertiesForTopCard = {
-	position: { x: number; y: number }
-	skew: { x: number; y: number }
-	rotation: number
+export type TOptions = {
+	readonly cardsSkew: { readonly x: number; readonly y: number }
+	readonly cardSize: { readonly width: number; readonly height: number }
 }
 
-export class Deck extends Container {
-	protected readonly cardsSkew: { x: number; y: number }
+export type TDeck<CardLike extends TCard> = {
+	readonly getProperties: (cardIndex: number) => TClosingProps
+} & Container<CardLike>
 
-	public constructor(cardsSkew: { readonly x: number; readonly y: number }) {
+export class Deck<CardLike extends TCard, OptionsLike extends TOptions>
+	extends Container<CardLike>
+	implements TDeck<CardLike>
+{
+	protected readonly cardsSkew: OptionsLike['cardsSkew']
+	protected readonly cardSize: OptionsLike['cardSize']
+
+	public constructor(options: OptionsLike) {
 		super()
-		this.cardsSkew = cardsSkew
+		this.cardsSkew = options.cardsSkew
+		this.cardSize = options.cardSize
 	}
 
-	public get countCards(): number {
-		return this.children.length
-	}
-
-	public addCard(card: Sprite, initial: boolean): void {
-		if (initial) {
-			const properties = ((): TPropertiesForTopCard => {
-				const noCardsInFly = 0
-				return this.getPropertiesForTopCard(card, noCardsInFly)
-			})()
-			card.position.set(properties.position.x, properties.position.y)
-			card.rotation = properties.rotation
-			card.skew.set(properties.skew.x, properties.skew.y)
-		} else {
-			card.position.set(
-				card.x - this.position.x,
-				card.y - this.position.y,
-			)
-		}
-		this.addChild(card)
-	}
-
-	public getTopCard(): Sprite {
-		if (!this.countCards) {
-			throw new Error('No cards in the deck')
-		}
-
-		const topCardIndex = 0
-		return ((): Sprite => {
-			const card = this.getCardByIndex(topCardIndex)
-
-			this.removeChild(card)
-			return card
-		})()
-	}
-
-	public getCardByIndex(indexFromTop: number): Sprite {
-		const topReducer = 1
-		return ((): Sprite => {
-			const card = this.getChildAt(
-				this.countCards - topReducer - indexFromTop,
-			)
-			if (!(card instanceof Sprite)) {
-				throw new Error('Card is not a Sprite')
-			}
-			return card
-		})()
-	}
-
-	public getPropertiesForTopCard(
-		card: Sprite,
-		cardsInFly: number,
-	): TPropertiesForTopCard {
+	public getProperties(cardIndex: number): TClosingProps {
 		const byPositionFactor = 0.005,
 			byRotationFactor = 0.02,
 			halfOfRandomRange = 0.5
 		return {
-			position: {
-				[`x`]:
-					-(this.countCards + cardsInFly) *
-					card.texture.width *
-					byPositionFactor,
-				[`y`]:
-					-(this.countCards + cardsInFly) *
-					card.texture.height *
-					byPositionFactor,
-			},
 			rotation: (Math.random() - halfOfRandomRange) * byRotationFactor,
-			skew: { ...this.cardsSkew },
+			skewX: this.cardsSkew.x,
+			skewY: this.cardsSkew.y,
+			xPos: -cardIndex * this.cardSize.width * byPositionFactor,
+			yPos: -cardIndex * this.cardSize.height * byPositionFactor,
 		}
+	}
+
+	public override addChild(
+		...children: readonly CardLike[]
+	): ReturnType<Container<CardLike>['addChild']> {
+		children.forEach((child, index) => {
+			// If it is already in the scene, we need to swap the positions to avoid jumps
+			if (child.parent) {
+				const wasFinalPosition = child.finalPos
+				child.finalPos = child.startPos
+				child.startPos = wasFinalPosition
+				return
+			}
+			child.startPos = this.getProperties(this.children.length + index)
+		})
+		return super.addChild(...children)
+	}
+
+	public override destroy(): void {
+		this.children.forEach((child) => {
+			child.destroy()
+		})
+		super.destroy()
 	}
 }

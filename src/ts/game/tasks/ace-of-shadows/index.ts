@@ -1,359 +1,264 @@
-// No need to separate class, it is not big enough
-/* eslint-disable max-lines */
-
-import { type Application, Container, Sprite, type Texture } from 'pixi.js'
-import { Deck, type TPropertiesForTopCard } from './deck.js'
+import { type Application, Container, type Texture } from 'pixi.js'
+import { Card, type TCard } from './card.js'
+import { Deck, type TDeck } from './deck.js'
+import { FlyCards, type TFlyCards } from './fly-cards.js'
 import { createCardBack } from './create-skin.js'
-import { gsap } from 'gsap'
-import { skewRecalculation } from './skew-recalculation/index.js'
+import { genRandomSkew } from './gen-random-skew.js'
+import gsap from 'gsap'
 
 export class AceOfShadowsTask<App extends Application> {
 	public readonly viewObject: Container
-	protected decks: {
-		readonly from: Deck
-		readonly to: Deck
+	protected timeline?: gsap.core.Timeline
+	protected readonly decks: {
+		from: TDeck<TCard>
+		to: TDeck<TCard>
 	}
-	protected animationTimeline?: gsap.core.Timeline
-	protected readonly flyingCardsContainer: Container
+	protected readonly flyingCardsContainer: TFlyCards<TCard>
 	protected readonly cardTexture: Texture
-	protected readonly numberCards: number
-	protected readonly cardTimeLines: Set<gsap.core.Timeline>
-	protected readonly viewObjectMaxSize: {
-		readonly width: number
-		readonly height: number
-	}
-	// In seconds
-	protected readonly forOneCardAnimationDuration: number
-	protected readonly delayBetweenCardsAnimationDuration: number
+	protected readonly durationToFlyOneCard: number
+	protected readonly delayBetweenCards: number
 
-	// Here many assignments in constructor, but it is ok
-	// eslint-disable-next-line max-statements
 	public constructor(application: App) {
 		this.viewObject = new Container()
-		this.flyingCardsContainer = new Container()
-		this.numberCards = 144
-		this.forOneCardAnimationDuration = 2
-		this.delayBetweenCardsAnimationDuration = 1
-
-		this.viewObjectMaxSize = {
-			height: 900,
-			width: 1500,
-		}
-		const skew = AceOfShadowsTask.getSkew()
-		this.decks = {
-			from: new Deck(skew),
-			to: new Deck(skew),
-		}
-		this.cardTimeLines = new Set<gsap.core.Timeline>()
+		this.flyingCardsContainer = new FlyCards()
 		this.cardTexture = createCardBack(application)
-		this.createCards()
-	}
-
-	protected static getSkew(): { readonly x: number; readonly y: number } {
-		const factor = 0.05
-		return {
-			[`x`]: Math.random() * factor,
-			[`y`]: Math.random() * factor,
-		}
-	}
-
-	public createCards(): void {
-		const increment = 1
-		for (let index = 0; index < this.numberCards; index += increment) {
-			const card = new Sprite(this.cardTexture)
-			this.decks.from.addCard(card, true)
-		}
+		this.durationToFlyOneCard = 2
+		this.delayBetweenCards = 0.5
+		const cardSizeToTextureMultiplier = 1,
+			numberCards = 144
+		this.decks = this.createDecks(cardSizeToTextureMultiplier)
+		this.organizeViewObject()
+		this.createAndFillCards(numberCards, cardSizeToTextureMultiplier)
 	}
 
 	public resize(width: number, height: number): void {
-		const halfFactor = 0.5
-		this.viewObject.position.set(width * halfFactor, height * halfFactor)
+		const centerFactor = 0.5,
+			defaultScale = 1,
+			minHeight = 1000,
+			minWidth = 2000
 
-		let realSizes = {
-			height,
-			width,
-		}
+		this.viewObject.position.set(
+			width * centerFactor,
+			height * centerFactor,
+		)
 
-		if (width < height) {
-			this.viewObject.angle = 90
-			realSizes = {
-				height: realSizes.width,
-				width: realSizes.height,
+		if (width < minWidth || height < minHeight) {
+			this.viewObject.scale.set(
+				Math.min(width / minWidth, height / minHeight),
+			)
+			if (width < height) {
+				this.viewObject.angle = 90
+			} else {
+				this.viewObject.angle = 0
 			}
 		} else {
-			this.viewObject.angle = 0
+			this.viewObject.scale.set(defaultScale)
 		}
-
-		this.viewObject.scale.set(
-			Math.min(
-				realSizes.width / this.viewObjectMaxSize.width,
-				realSizes.height / this.viewObjectMaxSize.height,
-			),
-		)
-	}
-
-	public display(): void {
-		this.viewObject.addChild(this.decks.from)
-		this.viewObject.addChild(this.decks.to)
-
-		this.updateDecksPositions()
-
-		const oneCardIncrement = 1
-
-		for (
-			let index = 0;
-			index < this.numberCards;
-			index += oneCardIncrement
-		) {
-			this.addOneCardToAnimation(index)
-		}
-		this.viewObject.addChild(this.flyingCardsContainer)
-
-		this.displayAnimation()
 	}
 
 	public destroy(): void {
-		this.animationTimeline?.kill()
-		delete this.animationTimeline
-		this.cardTimeLines.forEach((tl: { readonly kill: () => void }) => {
-			tl.kill()
-		})
-		this.cardTimeLines.clear()
-		this.decks.from.destroy(true)
-		this.decks.to.destroy(true)
-		this.viewObject.destroy(true)
+		// Set max progress to end promise and kill
+		const maxProgress = 1
+		this.timeline?.progress(maxProgress).kill()
+		this.decks.from.destroy()
+		this.decks.to.destroy()
+		this.flyingCardsContainer.destroy()
+		this.viewObject.destroy()
 		this.cardTexture.destroy(true)
 	}
 
-	protected displayAnimation(): void {
-		const startTime = 0
-		this.animationTimeline?.eventCallback('onComplete', () => {
-			this.decks = {
-				from: this.decks.to,
-				to: this.decks.from,
-			}
-			this.animationTimeline
-				?.play(startTime)
-				.reverse(this.animationTimeline.duration())
-		})
-		this.animationTimeline?.eventCallback('onReverseComplete', () => {
-			this.decks = {
-				from: this.decks.to,
-				to: this.decks.from,
-			}
-			this.animationTimeline?.play(startTime)
-		})
-		this.animationTimeline?.play(startTime)
+	public async play(): Promise<void> {
+		await this.createTimeline()
 	}
 
-	protected updateDecksPositions(): void {
-		const center = 0,
-			spreadFromCenter = 400
-
-		this.decks.from.position.set(-spreadFromCenter, center)
-		this.decks.to.position.set(spreadFromCenter, center)
-	}
-
-	protected addOneCardToAnimation(index: number): void {
-		const cardTimeline = ((card: Sprite): gsap.core.Timeline =>
-			this.generateCardTimeline({
-				card,
-				finalVisualData: ((): TPropertiesForTopCard => {
-					const finalVisualData = {
-						...this.decks.to.getPropertiesForTopCard(card, index),
-					}
-					finalVisualData.position = {
-						[`x`]: finalVisualData.position.x + this.decks.to.x,
-						[`y`]: finalVisualData.position.y + this.decks.to.y,
-					}
-					return finalVisualData
-				})(),
-				index,
-				startPosition: {
-					[`x`]: card.x + this.decks.from.x,
-					[`y`]: card.y + this.decks.from.y,
-				},
-			}))(this.decks.from.getCardByIndex(index))
-
-		this.cardTimeLines.add(cardTimeline)
-		this.animationTimeline ??= new gsap.core.Timeline({ paused: true })
-		this.animationTimeline.add(
-			cardTimeline,
-			index * this.delayBetweenCardsAnimationDuration,
+	protected createAndFillCards(
+		numberCards: number,
+		scaleMultiplier: number,
+	): void {
+		this.decks.from.addChild(
+			...this.setFinalPositions([
+				...this.createCards(numberCards, scaleMultiplier),
+			]),
 		)
 	}
 
-	protected generateCardTimeline(prop: {
-		readonly index: number
-		readonly startPosition: { readonly x: number; readonly y: number }
-		readonly card: Sprite
-		readonly finalVisualData: {
-			readonly position: { readonly x: number; readonly y: number }
-			readonly skew: { readonly x: number; readonly y: number }
-			readonly rotation: number
-		}
-	}): gsap.core.Timeline {
-		return this.addVisualFromToTimeline(
-			this.addLogicalCallsToTimeline(gsap.timeline(), {
-				card: prop.card,
-				duration: this.forOneCardAnimationDuration,
-				finalPosition: prop.finalVisualData.position,
-				startPosition: prop.startPosition,
-			}),
-			{
-				card: prop.card,
-				duration: this.forOneCardAnimationDuration,
-				finalPosition: prop.finalVisualData.position,
-				finalRotation: prop.finalVisualData.rotation,
-				finalSkew: prop.finalVisualData.skew,
-				index: prop.index,
-				startPosition: prop.startPosition,
-			},
+	protected setDecksPosition(): void {
+		const distanceFromCenterX = 600,
+			distanceFromCenterY = 0
+		this.decks.from.position.set(-distanceFromCenterX, -distanceFromCenterY)
+		this.decks.to.position.set(distanceFromCenterX, distanceFromCenterY)
+	}
+
+	protected organizeViewObject(): void {
+		this.setDecksPosition()
+		this.viewObject.addChild(
+			this.decks.from,
+			this.decks.to,
+			this.flyingCardsContainer,
 		)
 	}
 
-	protected addLogicalCallsToTimeline<TimeLine extends gsap.core.Timeline>(
-		timeline: TimeLine,
-		props: {
-			readonly startPosition: { readonly x: number; readonly y: number }
-			readonly card: Sprite
-			readonly duration: number
-			readonly finalPosition: { readonly x: number; readonly y: number }
-		},
-	): TimeLine {
-		const noDelayOnStart = 0
-		return timeline
-			.add(() => {
-				const globalTimeLine = this.animationTimeline
-				if (!globalTimeLine) {
-					throw new Error('No animation tween')
+	protected async createTimeline(): Promise<void> {
+		return new Promise((resolve, reject) => {
+			// Set max progress to end promise and kill
+			const maxProgress = 1
+			this.timeline?.progress(maxProgress).kill()
+			this.timeline = this.decks.from.children
+				.map(<C extends TCard>(card: C) =>
+					this.createTimeLineForOneCard(card, (err) => {
+						reject(
+							new Error(`Error creating timeline for card`, {
+								cause: err,
+							}),
+						)
+					}),
+				)
+				.reverse()
+				.reduce(
+					<T extends gsap.core.Timeline>(
+						accum: T,
+						current: { readonly timeline: T },
+						index: number,
+					) => {
+						current.timeline.paused(false)
+						accum.add(
+							current.timeline,
+							index * this.delayBetweenCards,
+						)
+						return accum
+					},
+					gsap.timeline({ paused: true }),
+				)
+			this.timeline.eventCallback('onUpdate', () => {
+				try {
+					this.flyingCardsContainer.sortCards()
+				} catch (err: unknown) {
+					reject(
+						new Error(`Error sorting flying cards`, { cause: err }),
+					)
 				}
-				if (!globalTimeLine.reversed()) {
-					const deAttachedCard = this.decks.from.getTopCard()
-					// POSSIBLE_BUG - shold be adjusted based on animation (overlap logic) - with previous ease used another (look on changes to understand)
-					this.flyingCardsContainer.addChild(deAttachedCard)
-					// To make sure to change position in the same render frame
-					deAttachedCard.position = { ...props.startPosition }
-					return
-				}
-				this.decks.to.addCard(props.card, false)
-			}, noDelayOnStart)
-			.add(() => {
-				const asFirstChild = 0,
-					globalTimeLine = this.animationTimeline
-
-				if (!globalTimeLine) {
-					throw new Error('No animation tween')
-				}
-				if (!globalTimeLine.reversed()) {
-					this.decks.to.addCard(props.card, false)
-					return
-				}
-
-				this.decks.from.getTopCard()
-				this.flyingCardsContainer.addChildAt(props.card, asFirstChild)
-				// To make sure to change position in the same render frame
-				props.card.position = {
-					...props.finalPosition,
-				}
-			}, props.duration)
+			})
+			this.timeline
+				.play()
+				.then(() => {
+					resolve()
+				})
+				.catch((err: unknown) => {
+					reject(new Error(`Error playing timeline`, { cause: err }))
+				})
+		})
 	}
 
-	// If this function is bigger then others - it is okay, we setting here properties, often - separately
 	// eslint-disable-next-line max-lines-per-function
-	protected addVisualFromToTimeline<TimeLine extends gsap.core.Timeline>(
-		timeline: TimeLine,
-		props: {
-			readonly startPosition: { readonly x: number; readonly y: number }
-			readonly finalPosition: { readonly x: number; readonly y: number }
-			readonly finalSkew: { readonly x: number; readonly y: number }
-			readonly finalRotation: number
-			readonly duration: number
-			readonly card: Sprite
-			readonly index: number
-		},
-	): TimeLine {
-		const noDelayOnStart = 0,
-			position = {
-				...props.startPosition,
-			},
-			startSkew = {
-				[`x`]: props.card.skew.x,
-				[`y`]: props.card.skew.y,
-			}
-		return timeline
-			.fromTo(
-				position,
-				{
-					...props.startPosition,
-				},
-				{
-					...props.finalPosition,
-					duration: props.duration,
-					// Removed ease to look like 2s for preview, however I love ease: 'power2.inOut',
-					// eslint-disable-next-line max-statements, max-lines-per-function
-					onUpdate: () => {
-						if (props.card.parent === this.flyingCardsContainer) {
-							props.card.position.set(position.x, position.y)
-
-							// POSSIBLE_BUG - I do not change final and start skew as they are the same in this example
-							const { skewX, skewY } = skewRecalculation({
-								cardsInfo: {
-									currentIndex: ((): number => {
-										if (
-											this.animationTimeline?.reversed() ===
-											true
-										) {
-											const reduceToLastIndex = 1
-											return (
-												this.numberCards -
-												reduceToLastIndex -
-												props.index
-											)
-										}
-										return props.index
-									})(),
-									totalCount: this.numberCards,
-								},
-								finalSkew: props.finalSkew,
-								progress: ((): number => {
-									if (
-										this.animationTimeline?.reversed() ===
-										true
-									) {
-										const maxProgress = 1
-										return maxProgress - timeline.progress()
-									}
-									return timeline.progress()
-								})(),
-								startSkew,
-							})
-
-							if (this.animationTimeline?.reversed() === true) {
-								const reflect = -1,
-									reflectAnchor = 1
-								props.card.scale.set(reflect)
-								props.card.anchor.set(reflectAnchor)
-							} else {
-								const defaultAnchor = 0,
-									defaultScale = 1
-								props.card.scale.set(defaultScale)
-								props.card.anchor.set(defaultAnchor)
-							}
-							props.card.skew.set(skewX, skewY)
+	protected createTimeLineForOneCard<C extends TCard>(
+		card: C,
+		errorCallback: (err: unknown) => void,
+	): {
+		timeline: gsap.core.Timeline
+		card: C
+	} {
+		return {
+			card,
+			timeline: card.creatTimeLineForFlyToDeck({
+				callBacks: {
+					onComplete: () => {
+						try {
+							this.decks.to.addChild(card)
+						} catch (err: unknown) {
+							errorCallback(
+								new Error(`Error adding card to deck`, {
+									cause: err,
+								}),
+							)
+						}
+					},
+					onStart: () => {
+						try {
+							this.flyingCardsContainer.addCard(card)
+						} catch (err: unknown) {
+							errorCallback(
+								new Error(
+									`Error adding card to flying container`,
+									{
+										cause: err,
+									},
+								),
+							)
 						}
 					},
 				},
-				noDelayOnStart,
-			)
-			.fromTo(
-				props.card,
-				{ rotation: props.card.rotation },
-				{
-					duration: props.duration,
-					rotation: props.finalRotation,
+				duration: this.durationToFlyOneCard,
+				props: {
+					final: (props) => {
+						const localPos = this.flyingCardsContainer.toLocal(
+							{ [`x`]: props.xPos, [`y`]: props.yPos },
+							this.decks.to,
+						)
+
+						return {
+							...props,
+							xPos: localPos.x,
+							yPos: localPos.y,
+						}
+					},
+					start: (props) => {
+						const localPos = this.flyingCardsContainer.toLocal(
+							{ [`x`]: props.xPos, [`y`]: props.yPos },
+							this.decks.from,
+						)
+						return {
+							...props,
+							xPos: localPos.x,
+							yPos: localPos.y,
+						}
+					},
 				},
-				noDelayOnStart,
+			}),
+		}
+	}
+
+	protected createDecks(cardSizeToTextureMultiplier: number): {
+		from: TDeck<TCard>
+		to: TDeck<TCard>
+	} {
+		const cardSize = {
+				height: this.cardTexture.height * cardSizeToTextureMultiplier,
+				width: this.cardTexture.width * cardSizeToTextureMultiplier,
+			},
+			skew = genRandomSkew()
+		return {
+			from: new Deck({
+				cardSize,
+				cardsSkew: skew,
+			}),
+			to: new Deck({
+				cardSize,
+				cardsSkew: skew,
+			}),
+		}
+	}
+
+	protected setFinalPositions<CardLike extends TCard>(
+		cards: readonly CardLike[],
+	): readonly CardLike[] {
+		const incrementFromFullLength = 1
+		cards.forEach((card, index) => {
+			card.finalPos = this.decks.to.getProperties(
+				cards.length - index - incrementFromFullLength,
 			)
+		})
+		return cards
+	}
+
+	protected createCards(
+		numberCards: number,
+		scaleMultiplier: number,
+	): Set<TCard> {
+		const cards = new Set<TCard>()
+
+		while (cards.size < numberCards) {
+			cards.add(new Card(this.cardTexture, scaleMultiplier))
+		}
+		return cards
 	}
 }

@@ -25,38 +25,33 @@ export class Data {
 			}),
 		),
 	})
-	// Allows subclasses to override the static reference for customized parsing behavior
-	protected static: typeof Data
-	protected parsedData?: z.infer<(typeof Data)['dataSchema']>
 
-	public constructor() {
-		this.static = Data
+	protected readonly emojieMap: Map<
+		string,
+		z.infer<(typeof Data)['dataSchema']>['emojies'][number]
+	>
+	protected readonly parsedData: z.infer<(typeof Data)['dataSchema']>
+
+	public constructor(input: unknown) {
+		this.parsedData = Data.parseData(input)
+		this.emojieMap = this.createEmojieMap()
 	}
 
-	public get emojies(): readonly z.infer<
-		(typeof Data)['dataSchema']
-	>['emojies'][number][] {
-		if (!this.parsedData) {
-			throw new Error('Data not parsed yet')
-		}
+	public get emojies(): Readonly<
+		z.infer<(typeof Data)['dataSchema']>['emojies']
+	> {
 		return this.parsedData.emojies
 	}
 
-	public get dialogue(): readonly z.infer<
-		(typeof Data)['dataSchema']
-	>['dialogue'][number][] {
-		if (!this.parsedData) {
-			throw new Error('Data not parsed yet')
-		}
+	public get dialogue(): Readonly<
+		z.infer<(typeof Data)['dataSchema']>['dialogue']
+	> {
 		return this.parsedData.dialogue
 	}
 
-	public get avatars(): readonly z.infer<
-		(typeof Data)['dataSchema']
-	>['avatars'][number][] {
-		if (!this.parsedData) {
-			throw new Error('Data not parsed yet')
-		}
+	public get avatars(): Readonly<
+		z.infer<(typeof Data)['dataSchema']>['avatars']
+	> {
 		return this.parsedData.avatars
 	}
 
@@ -66,14 +61,15 @@ export class Data {
 		return this.dataSchema.parse(data)
 	}
 
-	public parse(data: unknown): void {
-		this.parsedData = this.static.parseData(data)
+	public getEmojieData(
+		name: string,
+	):
+		| Readonly<z.infer<(typeof Data)['dataSchema']>['emojies'][number]>
+		| undefined {
+		return this.emojieMap.get(name)
 	}
 
-	public addBase64ToEmojie(name: string, base64Data: string): void {
-		if (!this.parsedData) {
-			throw new Error('Data not parsed yet')
-		}
+	public addBase64ToEmoji(name: string, base64Data: string): void {
 		const emoji = this.parsedData.emojies.find(
 			(em: { readonly name: string }) => em.name === name,
 		)
@@ -81,5 +77,23 @@ export class Data {
 			throw new Error(`Emoji with name ${name} not found`)
 		}
 		emoji.base64 = base64Data
+	}
+
+	protected createEmojieMap(): Map<
+		z.infer<(typeof Data)['dataSchema']>['emojies'][number]['name'],
+		z.infer<(typeof Data)['dataSchema']>['emojies'][number]
+	> {
+		return new Map<
+			z.infer<(typeof Data)['dataSchema']>['emojies'][number]['name'],
+			z.infer<(typeof Data)['dataSchema']>['emojies'][number]
+		>(
+			this.parsedData.emojies.map(
+				(data: {
+					readonly name: string
+					readonly url: string
+					readonly base64?: string | undefined
+				}) => [data.name, data],
+			),
+		)
 	}
 }

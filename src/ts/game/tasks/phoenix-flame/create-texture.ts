@@ -1,6 +1,9 @@
 import { type Application, Container, Graphics, type Texture } from 'pixi.js'
 
-export const createFireTexture = (app: Application, size: number): Texture => {
+export const createFireTexture = (
+	getApp: () => Application,
+	size: number,
+): Texture => {
 	const center = ((): number => {
 			const halfSizeFactor = 2
 			return size / halfSizeFactor
@@ -22,7 +25,7 @@ export const createFireTexture = (app: Application, size: number): Texture => {
 		.circle(center, center, size * sizes.small)
 		.fill({ alpha: 1.0, color: 0xffffc8 })
 
-	return app.renderer.generateTexture(
+	return getApp().renderer.generateTexture(
 		new Container().addChild(graphicsToTexture),
 	)
 }
